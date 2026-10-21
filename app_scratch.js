@@ -1,6 +1,17 @@
 ﻿const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 
 
+// Some local previews serve the frontend statically, so relative /api calls
+// hit a server with no API routes. Send local preview API calls to Express.
+const nativeFetch=window.fetch.bind(window);
+const localPreview=typeof location!=='undefined'&&(location.protocol==='file:'||['localhost','127.0.0.1','::1'].includes(location.hostname));
+window.fetch=(input,init={})=>{
+ const url=typeof input==='string'?input:input?.url;
+ if(!localPreview||!url||!url.startsWith('/api/'))return nativeFetch(input,init);
+ const apiUrl=location.protocol==='file:'||location.port!=='3000'?`http://localhost:3000${url}`:input;
+ return nativeFetch(apiUrl,{...init,credentials:'include'});
+};
+
 const ICON_PATHS={
   chart:'<path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/>',
   brain:'<path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24A2.5 2.5 0 0 0 14.5 2Z"/>',
@@ -50,22 +61,28 @@ function pathIcon(p,size=18){
   return iconSvg((p&&p.iconKey)||'spark',size,'path-card-icon');
 }
 
-const STORE={user:"yp_user_v3",answers:"yp_answers_v3",saved:"yp_saved_v3",cookie:"yp_cookie_v3",session:"yp_question_session_v3",accounts:"yp_accounts_v3",history:"yp_history_v3",savedNotes:"yp_saved_notes_v3",experiments:"yp_experiments_v3",activeTab:"yp_active_tab_v3"};
-const state={user:JSON.parse(localStorage.getItem(STORE.user)||"null"),answers:JSON.parse(localStorage.getItem(STORE.answers)||"{}"),saved:JSON.parse(localStorage.getItem(STORE.saved)||"[]"),session:JSON.parse(localStorage.getItem(STORE.session)||"null"),accounts:JSON.parse(localStorage.getItem(STORE.accounts)||"{}"),history:JSON.parse(localStorage.getItem(STORE.history)||"[]"),savedNotes:JSON.parse(localStorage.getItem(STORE.savedNotes)||"{}"),experiments:JSON.parse(localStorage.getItem(STORE.experiments)||"{}"),qIndex:0,compareSelected:[],eduPathway:null};
-
-/* Demo student account that ships with the prototype so the login flow can be
-   demonstrated without registering first. The same account is seeded on the
-   server (YourPath@gmail.com / yourpath2026); this local copy is the fallback
-   used when the backend is offline or DATABASE_URL is not configured. */
-const DEMO_ACCOUNT={email:"yourpath@gmail.com",password:"yourpath2026",name:"YourPath Demo Student",phone:"",country:"Philippines (+63)",grade:"Grade 10",age:"16",school:"YourPath. Demo School",targetCountry:"Domestic / Home Country",budget:"Full scholarship needed",goals:"Explore career pathways that fit my interests.",role:"student",demo:true};
-(function ensureDemoAccount(){
-  state.accounts=state.accounts||{};
-  const key=DEMO_ACCOUNT.email.toLowerCase();
-  if(!state.accounts[key]){
-    state.accounts[key]={...DEMO_ACCOUNT};
-    try{localStorage.setItem(STORE.accounts,JSON.stringify(state.accounts));}catch(e){}
-  }
-})();
+const STORE={user:"yp_user_v3",answers:"yp_answers_v3",saved:"yp_saved_v3",cookie:"yp_cookie_v3",session:"yp_question_session_v3",history:"yp_history_v3",savedNotes:"yp_saved_notes_v3",experiments:"yp_experiments_v3",activeTab:"yp_active_tab_v3",activePage:"yp_active_page_v1",preferences:"yp_preferences_v1"};
+function readStored(key,fallback){try{const value=localStorage.getItem(key);return value==null?fallback:JSON.parse(value)}catch(e){return fallback}}
+const legacySavedUser=readStored(STORE.user,null);
+if(legacySavedUser&&typeof legacySavedUser==='object')delete legacySavedUser.password;
+const state={user:null,serverSessionAvailable:null,answers:readStored("yp_answers_v3",{}),saved:readStored("yp_saved_v3",[]),session:readStored("yp_question_session_v3",null),history:readStored("yp_history_v3",[]),savedNotes:readStored("yp_saved_notes_v3",{}),experiments:readStored("yp_experiments_v3",{}),preferences:readStored("yp_preferences_v1",{theme:"light",reducedMotion:false}),qIndex:0,compareSelected:[],eduPathway:null};
+try{localStorage.removeItem("yp_accounts_v3");}catch(e){}
+function scopedStoreKey(key,user=state.user){return `${key}_${encodeURIComponent(user?.id||'guest')}`}
+function loadAccountScopedState(fresh=false){
+ const historyKey=scopedStoreKey(STORE.history);
+ const legacyMatches=legacySavedUser?.id&&state.user?.id&&String(legacySavedUser.id)===String(state.user.id);
+ state.history=fresh?[]:readStored(historyKey,legacyMatches?readStored(STORE.history,[]):[]);
+ if(fresh){try{localStorage.removeItem(historyKey)}catch(e){}}
+ if(typeof AI_STORE!=='undefined'){
+   state.aiSession=fresh?null:(localStorage.getItem(scopedStoreKey(AI_STORE.session))||(legacyMatches?localStorage.getItem(AI_STORE.session):null));
+   state.aiResult=fresh?null:readStored(scopedStoreKey(AI_STORE.result),legacyMatches?readStored(AI_STORE.result,null):null);
+ }
+ if(typeof LOCAL_AI_STORE!=='undefined'){
+   state.localAI=fresh?null:readStored(scopedStoreKey(LOCAL_AI_STORE.session),legacyMatches?readStored(LOCAL_AI_STORE.session,null):null);
+   state.localAIResult=fresh?null:readStored(scopedStoreKey(LOCAL_AI_STORE.result),legacyMatches?readStored(LOCAL_AI_STORE.result,null):null);
+ }
+ if(legacyMatches){[STORE.history,AI_STORE.session,AI_STORE.result,LOCAL_AI_STORE.session,LOCAL_AI_STORE.result].forEach(key=>{try{localStorage.removeItem(key)}catch(e){}})}
+}
 
 const categoryConfig=[
  {id:"interests",label:"Genuine interests",weight:14},
@@ -234,7 +251,7 @@ function getCategoryStems(){
    {format:c=>`I find healthy competition with talented peers pushes me to reach higher potential (${c.suffix}).`,type:"scale"},
    {format:c=>`${c.prefix} which type of praise feels most genuinely validating to you?`,type:"single",options:["Praise for the technical elegance, ingenuity, or efficiency of my solution","Praise for the originality, beauty, and emotional impact of my creative design","Gratitude from someone whose life was genuinely made easier by what I built","Commendation for my work ethic, reliability, and leadership under pressure","Measurable metrics showing high performance and real-world adoption"]},
    {format:c=>`Which legacy would you feel most proud to leave behind in your future career (${c.suffix})?`,type:"multi",options:["A groundbreaking open-source software library or technological innovation","A portfolio of iconic creative works, designs, or stories","A legacy of patients, students, or mentees whose lives I transformed","A thriving enterprise or foundation built on ethical principles","A scientific discovery or patent that expanded human knowledge","A safer, more equitable community with stronger social protections","A published body of intellectual books, research, or philosophies","A successful family and a balanced life rich in personal relationships"]},
-   {format:c=>`Rank these daily motivations in order of which fuels you most (${c.suffix}), from 1 to 5:`,type:"rank",options:["Curiosity to learn how something works and build mastery","Passion to express creativity and bring new ideas to life","Desire to help people and make a positive social contribution","Ambition to achieve independence, security, and success","Excitement of collaborating with brilliant teammates"]},
+   {format:c=>`Rank these sources of motivation from most to least important to you (${c.suffix}):`,type:"rank",options:["Curiosity to learn how something works and build mastery","Passion to express creativity and bring new ideas to life","Desire to help people and make a positive social contribution","Ambition to achieve independence, security, and success","Excitement of collaborating with brilliant teammates"]},
    {format:c=>`I feel deeply fulfilled when I can see the direct results of my effort in the real world (${c.suffix}).`,type:"scale"},
    {format:c=>`${c.prefix} what gives you confidence when embarking on an ambitious multi-month project?`,type:"scenario",options:["Having a clear roadmap broken down into manageable weekly milestones","Knowing I have the grit to research and self-teach whatever skills are needed","Having an enthusiastic team or mentor who believes in the vision","Testing small proof-of-concepts early to validate core assumptions","Focusing on the transformative impact the finished project will have"]},
    {format:c=>`${c.prefix} what does 'success' mean to you at age 30?`,type:"single",options:["Doing stimulating work I love with high autonomy, flexibility, and continuous learning","Being recognized as an exceptional creative or technical leader in my industry","Financial freedom, home ownership, and providing generously for my loved ones","Making measurable contributions to healthcare, education, or social equality","A balanced, fulfilling life with exciting adventures, great health, and close friends"]},
@@ -340,10 +357,16 @@ function weightedSession(){
  const present=new Set(selected.map(q=>q.category));
  for(const cfg of categoryConfig){
    if(present.has(cfg.id)) continue;
-   const replacement=QUESTION_BANK.filter(q=>q.category===cfg.id&&!selected.some(s=>s.id===q.id))[Math.floor(Math.random()*100)];
+   const replacementPool=QUESTION_BANK.filter(q=>q.category===cfg.id&&!selected.some(s=>s.id===q.id));
+   if(!replacementPool.length)continue;
+   const replacement=replacementPool[Math.floor(Math.random()*replacementPool.length)];
    const counts={};selected.forEach(q=>counts[q.category]=(counts[q.category]||0)+1);
    let idx=selected.length-1;let weakest=Infinity;
-   for(let i=0;i<selected.length;i++){if(counts[selected[i].category]>1 && candidates.find(x=>x.q.id===selected[i].id)?.key<weakest){weakest=candidates.find(x=>x.q.id===selected[i].id)?.key;idx=i}}
+   for(let i=0;i<selected.length;i++){
+     const weightKey=candidates.find(x=>x.q.id===selected[i].id)?.key??Infinity;
+     if(counts[selected[i].category]>1&&weightKey<weakest){weakest=weightKey;idx=i;}
+   }
+   if(selected[idx])present.delete(selected[idx].category);
    selected[idx]=replacement;present.add(cfg.id);
  }
  return shuffle(selected);
@@ -373,7 +396,7 @@ function resetLocalSignals(){
 }
 let _dbSyncTimeout = null;
 async function flushProgressToDatabase(){
-  if(!state.user || (!state.user.id && !state.user.email)) return;
+  if(!state.user || state.serverSessionAvailable===false || (!state.user.id && !state.user.email)) return;
   const snapshot={
     userId: state.user.id,
     email: state.user.email,
@@ -395,23 +418,29 @@ async function flushProgressToDatabase(){
   }
 }
 function syncProgressToDatabase(){
-  if(!state.user || (!state.user.id && !state.user.email)) return;
+  if(!state.user || state.serverSessionAvailable===false || (!state.user.id && !state.user.email)) return;
   clearTimeout(_dbSyncTimeout);
   _dbSyncTimeout = setTimeout(flushProgressToDatabase, 400);
 }
 function saveState(){
- localStorage.setItem(STORE.user,JSON.stringify(state.user));
- localStorage.setItem(STORE.answers,JSON.stringify(state.answers));
- localStorage.setItem(STORE.saved,JSON.stringify(state.saved));
- localStorage.setItem(STORE.session,JSON.stringify(state.session));
- localStorage.setItem(STORE.accounts,JSON.stringify(state.accounts));
- localStorage.setItem(STORE.history,JSON.stringify(state.history));
- localStorage.setItem(STORE.savedNotes,JSON.stringify(state.savedNotes));
- localStorage.setItem(STORE.experiments,JSON.stringify(state.experiments));
+ try{
+  localStorage.setItem(STORE.user,JSON.stringify(state.user));
+  localStorage.setItem(STORE.answers,JSON.stringify(state.answers));
+  localStorage.setItem(STORE.saved,JSON.stringify(state.saved));
+  localStorage.setItem(STORE.session,JSON.stringify(state.session));
+  localStorage.setItem(STORE.preferences,JSON.stringify(state.preferences||{theme:"light",reducedMotion:false}));
+  if(state.user)localStorage.setItem(scopedStoreKey(STORE.history),JSON.stringify(state.history));
+  localStorage.setItem(STORE.savedNotes,JSON.stringify(state.savedNotes));
+  localStorage.setItem(STORE.experiments,JSON.stringify(state.experiments));
+ }catch(err){/* Keep the in-memory app usable if browser storage is blocked or full. */}
  syncProgressToDatabase();
 }
 function sessionQuestions(){return state.session?.ids?.map(id=>QUESTION_BANK.find(q=>q.id===id)).filter(Boolean)||[]}
-function ensureSession(){if(!state.session||state.session.ids?.length!==20)newSession()}
+function ensureSession(){
+ const ids=state.session?.ids;
+ const valid=Array.isArray(ids)&&ids.length===20&&new Set(ids).size===20&&ids.every(id=>QUESTION_BANK.some(q=>q.id===id));
+ if(!valid)newSession();
+}
 
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.classList.remove("show"),2600)}
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
@@ -554,30 +583,43 @@ function saveExpNote(key,val){
  state.expNotes=state.expNotes||{}; state.expNotes[key]=val; saveState();
 }
 
-function showPage(id){$$(".page").forEach(x=>x.classList.remove("active"));$("#"+id)?.classList.add("active");window.scrollTo({top:0,behavior:"smooth"});$("#mobileNav").classList.remove("open")}
+function showPage(id){
+  if(id==="home"&&state.user)id="dashboard";
+  if(state.user&&document.getElementById(id)?.classList.contains("page")){
+    try{localStorage.setItem(STORE.activePage,id)}catch(e){}
+  }
+  $$(".page").forEach(x=>x.classList.remove("active"));
+  $("#"+id)?.classList.add("active");
+  window.scrollTo({top:0,behavior:"smooth"});
+  $("#mobileNav").classList.remove("open");
+}
 function openModal(id){
   if(id==="authModal"){openLogin();return;}
   $("#"+id)?.classList.remove("hidden");
 }
 function closeModal(id){
-  if(id==="authModal"){
-    $("#loginModal")?.classList.add("hidden");
-    $("#signupModal")?.classList.add("hidden");
-  }
   $("#"+id)?.classList.add("hidden");
 }
-function openLogin(){
-  closeModal("signupModal");
-  closeModal("authModal");
-  openModal("loginModal");
-  const emailInput=$("#loginForm input[name='email']");
+function openLogin(emailHint=""){
+  if(state.user){showPage("dashboard");goTab("overview");return;}
+  const loginForm=$("#homeLoginForm"), signupForm=$("#signupForm");
+  loginForm?.classList.remove("hidden");
+  signupForm?.classList.add("hidden");
+  $("#homeLoginTab")?.classList.add("selected");
+  $("#homeSignupTab")?.classList.remove("selected");
+  $("#homeLoginTab")?.setAttribute("aria-selected","true");
+  $("#homeSignupTab")?.setAttribute("aria-selected","false");
+  showPage("home");
+  const emailInput=$("#homeEmail");
   // Remember the address used to register on this browser so the student
   // only has to type the password when coming back to an existing account.
   const remembered=lastSignupDetails();
   if(emailInput){
-    if(remembered&&remembered.email&&!emailInput.value){
-      emailInput.value=remembered.email;
-      const pwInput=$("#loginForm input[name='password']");
+    const suggestedEmail=emailHint||remembered?.email||"";
+    if(emailHint){emailInput.value=emailHint;}
+    else if(suggestedEmail&&!emailInput.value){
+      emailInput.value=suggestedEmail;
+      const pwInput=$("#homeLoginForm input[name='password']");
       if(pwInput) setTimeout(()=>pwInput.focus(), 50);
       else setTimeout(()=>emailInput.focus(), 50);
     } else {
@@ -586,13 +628,16 @@ function openLogin(){
   }
 }
 function openSignup(){
-  closeModal("loginModal");
-  closeModal("authModal");
-  if(typeof window.resetConsentGate==="function"){
-    window.resetConsentGate();
-  }
-  openModal("signupModal");
+  if(state.user){showPage("dashboard");goTab("overview");return;}
+  $("#homeLoginForm")?.classList.add("hidden");
+  $("#signupForm")?.classList.remove("hidden");
+  $("#homeLoginTab")?.classList.remove("selected");
+  $("#homeSignupTab")?.classList.add("selected");
+  $("#homeLoginTab")?.setAttribute("aria-selected","false");
+  $("#homeSignupTab")?.setAttribute("aria-selected","true");
   prefillSignupForm();
+  showPage("home");
+  setTimeout(()=>$("#signupForm input[name='name']")?.focus(),0);
 }
 window.openLogin=openLogin;
 window.openSignup=openSignup;
@@ -629,7 +674,7 @@ window.switchAuth=switchAuth;
 // [data-page] is handled by the delegated listener below, so it covers
 // elements rendered after load as well.
 $("#hamb").onclick=()=>$("#mobileNav").classList.toggle("open");
-$("#heroStart").onclick=()=>{if(requireLogin()){goTab("questionnaire")}};
+$("#heroStart")?.addEventListener("click",()=>{if(requireLogin())goTab("questionnaire")});
 $("#roadmapStart").onclick=()=>{if(requireLogin()){showPage("dashboard");goTab("roadmaps")}};
 $$("[data-scroll]").forEach(b=>b.onclick=()=>document.querySelector(b.dataset.scroll)?.scrollIntoView({behavior:"smooth"}));
 $("#loginBtn").onclick=()=>openLogin();
@@ -667,7 +712,8 @@ function goTab(name){
  if(name==="feedback")renderEvidenceReadout();
  if(name==="saved")renderSaved();
  if(name==="history")renderHistory();
- if(name==="profile")loadProfile();
+ if(name==="community")renderCommunity();
+ if(name==="settings")loadSettings();
  if(name==="overview")renderOverview();
 }
 /* Delegated so buttons added later (e.g. the roadmap's "Explore pathways"
@@ -843,10 +889,11 @@ function showAuthLoader(configOrTitle, subtitle, onComplete){
 $("#signupForm").onsubmit=async e=>{
  e.preventDefault();
  const d=Object.fromEntries(new FormData(e.target).entries());
- if(!d.password || d.password.length < 6){
-   toast("Please choose a password with at least 6 characters.");
+ if(!d.password || d.password.length < 8){
+   toast("Please choose a password with at least 8 characters.");
    return;
  }
+ if(d.password!==d.confirmPassword){toast("The passwords do not match.");return;}
 
  const payload = {
    name: d.name,
@@ -874,9 +921,9 @@ $("#signupForm").onsubmit=async e=>{
    if (!res.ok) {
      if (res.status === 409) {
        // The website already remembers this address: guide the student to the
-       // login form (openLogin prefills the remembered email).
+       // login form with the address just checked.
        toast("This email is already registered. Please log in instead.");
-       openLogin();
+       openLogin(d.email);
        return;
      }
      toast(resData.error || "Failed to create account.");
@@ -884,23 +931,14 @@ $("#signupForm").onsubmit=async e=>{
    }
     registeredUser = resData.user;
    } catch(err) {
-     if(state.accounts && state.accounts[(d.email||"").toLowerCase().trim()]){
-       toast("An account with this email already exists. Please log in.");
-       openLogin();
-       return;
-     }
-     registeredUser = { ...payload, createdAt: Date.now() };
+     toast("We couldn’t reach the sign-up service. Check your connection and try again.");
+     return;
    }
-
- // Keep the chosen password in the local account record. The server response
- // is sanitized (no password), so without this the cached account could never
- // be matched again by the offline/local login fallback.
- registeredUser.password = payload.password;
- state.accounts = state.accounts || {};
- const signupKey = (registeredUser.email || "").toLowerCase().trim();
- registeredUser.email = signupKey;
- state.accounts[signupKey] = registeredUser;
+ if(!registeredUser?.id){toast("Your account was not created. Please try again.");return;}
  state.user = registeredUser;
+ state.serverSessionAvailable=true;
+ loadAccountScopedState(true);
+ state.preferences={...(state.preferences||{}),...(registeredUser.settings||{})};
  state.answers = {};
  newSession();
  saveState();
@@ -914,10 +952,11 @@ $("#signupForm").onsubmit=async e=>{
    title:`Welcome to YourPath., ${firstName}!`,
    subtitle:"Preparing your 20 personalised questions and your workspace...",
    onComplete:()=>{
+     // Navigate first so a rendering or animation issue cannot leave a
+     // successfully registered student stranded on the home screen.
+     showPage("dashboard");
      updateUI();
-     // Flip the student workspace into view, exactly like the login path.
      playAuthFlipTransition(()=>{
-       showPage("dashboard");
        goTab("overview");
        requestAnimationFrame(()=>{
          document.getElementById("journeyBoard")?.scrollIntoView({behavior:"smooth",block:"start"});
@@ -929,47 +968,13 @@ $("#signupForm").onsubmit=async e=>{
  });
 };
 
-$("#loginForm").onsubmit=async e=>{
+$("#homeLoginForm").onsubmit=async e=>{
  e.preventDefault();
  const d=Object.fromEntries(new FormData(e.target).entries());
- const emailKey=(d.email||"").toLowerCase().trim();
  const pw=(d.password||"");
 
  let loggedInUser = null;
  let fetchedProgress = null;
-
- /* Local fallback used when the backend cannot authenticate the student —
-    either because the request failed outright or because the server has no
-    database configured (HTTP 503). The demo account and any locally created
-    accounts still let the student in so the workspace transition runs. */
- const loginFromLocalAccounts=()=>{
-   if(state.accounts && state.accounts[emailKey]){
-     const local=state.accounts[emailKey];
-     if(local.password===pw){
-       loggedInUser = local;
-       return true;
-     }
-     // Accounts created through the server are cached here without a stored
-     // password (the API response is sanitized). If this cached account is
-     // the one currently signed in on this device, trust it instead of
-     // failing — the server already verified these credentials at signup.
-     if(!local.password && state.user && state.user.email.toLowerCase().trim()===emailKey){
-       loggedInUser = local;
-       return true;
-     }
-     toast("Incorrect password for this account. Please try again.");
-     return false;
-   }
-   const sessionUser=state.user;
-   const sameUnregistered=sessionUser&&sessionUser.email&&sessionUser.email.toLowerCase()===emailKey&&sessionUser.password&&sessionUser.password===pw;
-   if(sameUnregistered){
-     state.accounts=state.accounts||{};
-     state.accounts[emailKey]=sessionUser;
-     loggedInUser = sessionUser;
-     return true;
-   }
-   return false;
- };
 
  try {
    const res = await fetch('/api/auth/login', {
@@ -981,25 +986,19 @@ $("#loginForm").onsubmit=async e=>{
    if (res.ok) {
      loggedInUser = resData.user;
      fetchedProgress = resData.progress;
-   } else if (loginFromLocalAccounts()) {
-     // Backend could not authenticate (e.g. no database configured); the
-     // seeded demo account takes over so the student still reaches the
-     // workspace.
    } else {
      toast(resData.error || "Login failed.");
      return;
    }
  } catch(err) {
-   if(!loginFromLocalAccounts()){
-     toast("No account found for that email. Please sign up first.");
-     openSignup();
-     return;
-   }
+   toast("We couldn’t reach the sign-in service. Check your connection and try again.");
+   return;
  }
 
  state.user = loggedInUser;
- state.accounts = state.accounts || {};
- state.accounts[(loggedInUser.email||"").toLowerCase().trim()] = loggedInUser;
+ state.serverSessionAvailable=true;
+ loadAccountScopedState(false);
+ state.preferences={...(state.preferences||{}),...(loggedInUser.settings||{})};
 
  if (fetchedProgress) {
    // Restore this account's saved progress from the database. Empty values
@@ -1009,6 +1008,7 @@ $("#loginForm").onsubmit=async e=>{
    state.saved = Array.isArray(fetchedProgress.saved) ? fetchedProgress.saved : [];
    state.savedNotes = (fetchedProgress.savedNotes && typeof fetchedProgress.savedNotes === 'object') ? fetchedProgress.savedNotes : {};
    state.experiments = (fetchedProgress.experiments && typeof fetchedProgress.experiments === 'object') ? fetchedProgress.experiments : {};
+   state.session = null;
    if (fetchedProgress.session && fetchedProgress.session.ids) {
      state.session = fetchedProgress.session;
    }
@@ -1029,9 +1029,11 @@ $("#loginForm").onsubmit=async e=>{
    title:`Welcome back, ${firstName}!`,
    subtitle:"Loading your student profile, questionnaire answers & saved pathways...",
    onComplete:()=>{
+     // Switch pages before refreshing dashboard widgets; a widget error must
+     // never prevent a successful login from reaching the student workspace.
+     showPage("dashboard");
      updateUI();
      playAuthFlipTransition(()=>{
-       showPage("dashboard");
        goTab("overview");
      });
      toast(`Welcome back, ${state.user.name||"there"}!`);
@@ -1039,196 +1041,43 @@ $("#loginForm").onsubmit=async e=>{
  });
 };
 
-const handleLogout=async()=>{
-  // Persist this account's progress before we drop the session so that
-  // logging back in restores everything exactly where the student left off.
+const handleLogout=async event=>{
+  event?.preventDefault();
+  // Start both server operations while the active account is still available,
+  // but never make the visible logout wait on network progress synchronization.
   clearTimeout(_dbSyncTimeout);
-  await flushProgressToDatabase();
-  if(state.user){state.accounts=state.accounts||{};state.accounts[(state.user.email||"").toLowerCase().trim()]=state.user;}
-  saveState();
+  if(state.user)try{localStorage.setItem(scopedStoreKey(STORE.history),JSON.stringify(state.history||[]));}catch(err){}
+  const progressSave=flushProgressToDatabase();
+
   state.user=null;
+  state.serverSessionAvailable=false;
+  state.answers={};state.saved=[];state.savedNotes={};state.experiments={};state.history=[];state.session=null;state.aiSession=null;state.aiResult=null;state.aiQuestion=null;state.localAI=null;state.localAIResult=null;
   try{localStorage.removeItem(STORE.activeTab)}catch(e){}
+  try{localStorage.removeItem(STORE.activePage)}catch(e){}
   saveState();
-  updateUI();
+  try{updateUI()}catch(err){console.error("Could not refresh the signed-out view:",err)}
   showPage("home");
   toast("Logged out — your progress is saved.");
+
+  // Flush first when the API is responsive so it can still use the current
+  // session, then revoke that session. Both waits are bounded; a slow server
+  // can no longer leave the logout button appearing to do nothing.
+  void (async()=>{
+    await Promise.race([progressSave,new Promise(resolve=>setTimeout(resolve,700))]);
+    try{
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),1800);
+      try{await fetch('/api/auth/logout',{method:'POST',signal:controller.signal})}finally{clearTimeout(timeout)}
+    }catch(err){}
+  })();
 };
 $("#logout").onclick=handleLogout;
 const topLogout=$("#topLogout");
 if(topLogout) topLogout.onclick=handleLogout;
 
-const MOTIVATION_QUOTES = [
-  {
-    author: "Albert Einstein",
-    role: "Theoretical Physicist · Nobel Laureate in Physics",
-    avatar: "atom",
-    field: "CURIOSITY & DISCOVERY",
-    quote: "Imagination is more important than knowledge. For knowledge is limited, whereas imagination embraces the entire world, stimulating progress, giving birth to evolution.",
-    takeaway: "Never be afraid to ask unorthodox questions. The greatest breakthroughs in science and career begin with playful curiosity rather than rote memorization."
-  },
-  {
-    author: "Marie Curie",
-    role: "Physicist & Chemist · 2x Nobel Prize Winner",
-    avatar: "flask",
-    field: "PERSEVERANCE & SCIENCE",
-    quote: "Nothing in life is to be feared, it is only to be understood. Now is the time to understand more, so that we may fear less.",
-    takeaway: "Career uncertainty and tough exams can feel intimidating, but breaking them down into small, understandable experiments turns fear into confidence."
-  },
-  {
-    author: "Steve Jobs",
-    role: "Co-founder of Apple · Pioneer of Personal Computing",
-    avatar: "code",
-    field: "PASSION & INNOVATION",
-    quote: "The only way to do great work is to love what you do. If you haven't found it yet, keep looking. Don't settle.",
-    takeaway: "YourPath. is designed to help you explore multiple possibilities without forcing an early compromise. Keep testing until you find what genuinely fits you."
-  },
-  {
-    author: "Maya Angelou",
-    role: "Poet, Author & Civil Rights Champion",
-    avatar: "pen",
-    field: "CREATIVITY & RESILIENCE",
-    quote: "You can't use up creativity. The more you use, the more you have.",
-    takeaway: "Creativity isn't a finite resource. Whether you write code, design experiences, or build communities, daily practice makes your creative instincts sharper."
-  },
-  {
-    author: "Carl Sagan",
-    role: "Astronomer, Planetary Scientist & Author",
-    avatar: "telescope",
-    field: "ASTRONOMY & WONDER",
-    quote: "Somewhere, something incredible is waiting to be known.",
-    takeaway: "The world has thousands of emerging disciplines that didn't exist 10 years ago. Stay curious and build real skills that open doors to the unknown."
-  },
-  {
-    author: "Nelson Mandela",
-    role: "Former President of South Africa & Nobel Peace Laureate",
-    avatar: "globe",
-    field: "LEADERSHIP & EDUCATION",
-    quote: "Education is the most powerful weapon which you can use to change the world.",
-    takeaway: "Every subject you learn, every project you build, and every skill you practice gives you greater leverage to help your family and community."
-  },
-  {
-    author: "Leonardo da Vinci",
-    role: "Polymath, Artist, Engineer & Inventor",
-    avatar: "palette",
-    field: "INTERDISCIPLINARY MASTERY",
-    quote: "Learning never exhausts the mind.",
-    takeaway: "You don't have to choose between art and science. The most innovative creators bridge design, technology, and human empathy together."
-  },
-  {
-    author: "Richard Feynman",
-    role: "Theoretical Physicist · Nobel Laureate & Educator",
-    avatar: "zap",
-    field: "FIRST-PRINCIPLES THINKING",
-    quote: "Study hard what interests you the most in the most undisciplined, irreverent and original manner possible.",
-    takeaway: "True mastery comes from building things with your own hands and understanding why they work, not just memorizing answers for tests."
-  },
-  {
-    author: "Malala Yousafzai",
-    role: "Education Activist & Nobel Peace Prize Laureate",
-    avatar: "book",
-    field: "PURPOSE & ADVOCACY",
-    quote: "One child, one teacher, one book, one pen can change the world.",
-    takeaway: "Your voice and dedication matter regardless of your starting grade or background. Take pride in your educational journey."
-  },
-  {
-    author: "Katherine Johnson",
-    role: "NASA Mathematician & Space Exploration Pioneer",
-    avatar: "rocket",
-    field: "MATHEMATICS & EXCELLENCE",
-    quote: "Like what you do, and then you will do your best.",
-    takeaway: "Focus on finding the joy in problem solving. When you enjoy the process of learning, high performance follows naturally."
-  },
-  {
-    author: "Alan Turing",
-    role: "Father of Modern Computing & Artificial Intelligence",
-    avatar: "bot",
-    field: "COMPUTING & LOGIC",
-    quote: "Sometimes it is the people no one can imagine anything of who do the things no one can imagine.",
-    takeaway: "Don't let anyone pigeonhole your potential based on traditional molds. Unconventional thinkers often build the future."
-  },
-  {
-    author: "Jane Goodall",
-    role: "Primatologist, Anthropologist & Conservationist",
-    avatar: "leaf",
-    field: "ENVIRONMENT & IMPACT",
-    quote: "What you do makes a difference, and you have to decide what kind of difference you want to make.",
-    takeaway: "Every career choice carries real impact on people, animals, and the planet. Choose pathways that align with your deepest values."
-  }
-];
-
-let currentQuoteIndex = 0;
-
-function openMotivationModal(idx){
-  if(typeof idx === "number"){
-    currentQuoteIndex = idx % MOTIVATION_QUOTES.length;
-  }
-  renderMotivationModal();
-  openModal("motivationModal");
-}
-window.openMotivationModal = openMotivationModal;
-
-function renderMotivationModal(){
-  const item = MOTIVATION_QUOTES[currentQuoteIndex];
-  if(!item) return;
-  const quoteEl = $("#motQuote");
-  const authorEl = $("#motAuthor");
-  const roleEl = $("#motRole");
-  const avatarEl = $("#motAvatar");
-  const fieldEl = $("#motField");
-  const takeawayEl = $("#motTakeawayText");
-
-  if(quoteEl) quoteEl.textContent = `“${item.quote}”`;
-  if(authorEl) authorEl.textContent = item.author;
-  if(roleEl) roleEl.textContent = item.role;
-  if(avatarEl) avatarEl.innerHTML = iconSvg(item.avatar,26);
-  if(fieldEl) fieldEl.textContent = item.field;
-  if(takeawayEl) takeawayEl.textContent = item.takeaway;
-}
-
-function nextMotivationQuote(){
-  currentQuoteIndex = (currentQuoteIndex + 1) % MOTIVATION_QUOTES.length;
-  const quoteEl = $("#motQuote");
-  if(quoteEl){
-    quoteEl.style.opacity = "0";
-    quoteEl.style.transform = "translateY(8px)";
-    setTimeout(()=>{
-      renderMotivationModal();
-      quoteEl.style.opacity = "1";
-      quoteEl.style.transform = "none";
-    }, 150);
-  } else {
-    renderMotivationModal();
-  }
-  renderHeaderQuote();
-}
-window.nextMotivationQuote = nextMotivationQuote;
-
-function copyMotivationQuote(){
-  const item = MOTIVATION_QUOTES[currentQuoteIndex];
-  if(!item) return;
-  const text = `“${item.quote}” — ${item.author} (${item.role})`;
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(()=>{
-      toast("Quote copied to clipboard.");
-    }).catch(()=>{
-      toast(`Copied quote from ${item.author}`);
-    });
-  } else {
-    toast(`“${item.quote}” — ${item.author}`);
-  }
-}
-window.copyMotivationQuote = copyMotivationQuote;
-
-function renderHeaderQuote(){
-  const item = MOTIVATION_QUOTES[currentQuoteIndex];
-  const qText = $("#headerQuoteText");
-  const qAuth = $("#headerQuoteAuthor");
-  if(qText && item) qText.textContent = `“${item.quote}”`;
-  if(qAuth && item) qAuth.textContent = `${item.author} · ${item.role.split("·")[0].trim()}`;
-}
-
 function updateUI(){
  const loggedIn=Boolean(state.user);
+ syncProfileEditor();
  const loginBtn=$("#loginBtn");
  const signupBtn=$("#signupBtn");
  const userMenu=$("#userMenu");
@@ -1255,12 +1104,36 @@ function updateUI(){
  if(sideHistory) sideHistory.textContent=(state.history||[]).length;
  const sideExp=document.getElementById("sideExpBadge");
  if(sideExp) sideExp.textContent=completedExperiments();
- const answered=Object.keys(state.answers).length;
- $("#completion").textContent=`${Math.round(answered/20*100)}%`;
+ const localAnswered=sessionQuestions().filter(q=>state.answers[q.id]!=null&&state.answers[q.id]!==""&&!(Array.isArray(state.answers[q.id])&&state.answers[q.id].every(v=>v===""))).length;
+ const aiAnswered=Object.keys(state.answers||{}).filter(key=>/^AI_\d+$/.test(key)).length;
+ const answered=Math.min(20,Math.max(localAnswered,aiAnswered));
+ const completion=Math.round(answered/20*100);
+ $("#completion").textContent=`${completion}%`;
+ const ring=document.getElementById("progressRingValue");
+ if(ring)ring.textContent=`${completion}%`;
+ const progressCopy=document.getElementById("progressDetail");
+ if(progressCopy)progressCopy.textContent=`${answered} of 20 questions answered`;
+ const ringGraphic=document.querySelector(".progress-ring");
+ if(ringGraphic)ringGraphic.style.setProperty("--progress",`${completion * 3.6}deg`);
+ const nextHeading=document.getElementById("nextStepHeading");
+ const nextDescription=document.getElementById("nextStepDescription");
+ const nextButton=document.getElementById("nextStepButtonLabel");
+ if(completion===100){
+   if(nextHeading)nextHeading.textContent="Your answers are ready to explore.";
+   if(nextDescription)nextDescription.textContent="Review the patterns in your analysis, then compare the pathways that interest you.";
+   if(nextButton)nextButton.textContent="Review your analysis";
+   document.querySelector(".next-step-copy > button")?.setAttribute("data-tab","analysis");
+   document.querySelector(".dashboard-main-action")?.setAttribute("data-tab","analysis");
+ }else{
+   if(nextHeading)nextHeading.textContent=completion?"Keep building your interest profile.":"Start with what interests you.";
+   if(nextDescription)nextDescription.textContent=completion?"Continue the questionnaire to make your interest map and pathway suggestions more useful.":"A short questionnaire helps reveal patterns across your interests, learning style, and priorities.";
+   if(nextButton)nextButton.textContent=completion?"Continue questionnaire":"Begin questionnaire";
+   document.querySelector(".next-step-copy > button")?.setAttribute("data-tab","questionnaire");
+   document.querySelector(".dashboard-main-action")?.setAttribute("data-tab","questionnaire");
+ }
  renderOverview();renderPublic();
  renderInterestMap();
  renderJourney();
- renderHeaderQuote();
 }
 
 /* Hoisted function declarations.
@@ -1296,60 +1169,103 @@ function renderJourney(){
 
 function renderOverview(){
  const p=pathways.slice(0,4);
- $("#topPaths").innerHTML=p.map(x=>`<div class="path-mini"><span class="path-icon">${iconSvg(x.iconKey,16)}</span><span><b>${x.name}</b><small>${x.tag}</small></span><button class="link-inline" style="font-size:11px" onclick="viewPathwayEd('${escapeHtml(x.name)}')">Ed Guide</button></div>`).join("");
+ const count=document.getElementById("pathwayCount");
+ if(count)count.textContent=pathways.length;
+ $("#topPaths").innerHTML=p.map((x,i)=>`<div class="path-mini" role="listitem"><span class="path-icon">${iconSvg(x.iconKey,17)}</span><span class="path-mini-copy"><b>${escapeHtml(x.name)}</b><small>${escapeHtml(x.tag)}</small></span></div>`).join("");
 }
 
 function renderInterestMap(){
  const fill=$("#radarFill"), status=$("#interestStatus"), bars=$("#interestBars");
  if(!fill||!status||!bars)return;
  const qs=sessionQuestions();
- const answeredQs=qs.filter(q=>state.answers[q.id]!=null&&state.answers[q.id]!==""&&!(Array.isArray(state.answers[q.id])&&state.answers[q.id].every(v=>v==="")));
+ const hasAnswer=value=>Array.isArray(value)?value.some(v=>String(v??"").trim()!==""):String(value??"").trim()!=="";
+ const answeredQs=qs.filter(q=>hasAnswer(state.answers[q.id]));
  const count=answeredQs.length;
- if(count===0){
+ const activityEntries=Object.entries(state.experiments||{}).filter(([,activity])=>activity&&((Array.isArray(activity.done)&&activity.done.length>0)||activity.enjoyment!=null||String(activity.reflection||"").trim()));
+ if(count===0&&activityEntries.length===0){
    fill.classList.remove("ready");
+   fill.style.clipPath="";
+   document.getElementById("interestRadar")?.classList.add("is-empty");
    status.textContent="0/20 answered";
-   bars.innerHTML="<div class=\"muted\">Answer questions in the Questionnaire tab to shape your live interest map.</div>";
+   bars.innerHTML="<p class=\"interest-empty-copy\">Your profile takes shape from your answers. Start the questionnaire to see your interests emerge here.</p><button class=\"interest-empty-action\" type=\"button\" data-tab=\"questionnaire\"><span>Build your profile</span><span class=\"material-symbols-outlined\" aria-hidden=\"true\">arrow_forward</span></button>";
    return;
  }
+ document.getElementById("interestRadar")?.classList.remove("is-empty");
  const axes=["Analytical","Creative","People","Learning","Curiosity"];
- const scores=Object.fromEntries(axes.map(a=>[a,1]));
- const axisByCategory={
-   interests:{Curiosity:3,Creative:1}, subjects:{Learning:2,Analytical:1}, problem:{Analytical:4,Curiosity:1},
-   creativity:{Creative:5}, communication:{People:4,Creative:1}, leadership:{People:5}, motivation:{Learning:2,People:1},
-   workstyle:{Analytical:2,Learning:2}, learning:{Learning:5,Curiosity:2}, pressure:{People:1,Curiosity:1}, values:{Curiosity:2,Learning:1}
+ const scores=Object.fromEntries(axes.map(a=>[a,0]));
+ const questionContext={
+   interests:["Curiosity","Creative"],subjects:["Learning","Analytical"],problem:["Analytical","Curiosity"],
+   creativity:["Creative"],communication:["People","Creative"],workstyle:["Analytical","Learning","People"],
+   motivation:["Learning","People"],learning:["Learning","Curiosity"],pressure:["People","Curiosity"],values:["Curiosity","Learning"]
  };
- const addText=(text)=>{
+ const keywordMap={
+   Analytical:["math","data","logic","solve","analysis","code","program","system","evidence","research","pattern","debug","science","finance","statistics","numbers","technical","measure","calculate","software","computer","engineer","engineering","robotics","mechanic"],
+   Creative:["design","create","art","music","story","write","video","build","invent","creative","visual","animation","game","draw","imagine","original","make","perform"],
+   People:["people","help","teach","team","lead","communicate","community","listen","friend","customer","counsel","psychology","social","collaborate","group","support","interview"],
+   Learning:["learn","study","understand","read","course","practice","skill","knowledge","improve","master","class","lesson","train"],
+   Curiosity:["why","how","discover","investigate","experiment","question","research","explore","new","curious","nature","future","test","find out","science","technology"]
+ };
+ const addText=(text,weight=1,contributions={})=>{
    const t=String(text||"").toLowerCase();
-   const hits={
-     analytical:["math","data","logic","solve","analysis","code","program","system","evidence","research","pattern","debug","science","finance","statistics"],
-     creative:["design","create","art","music","story","write","video","build","invent","creative","visual","animation","game"],
-     people:["people","help","teach","team","lead","communicate","community","listen","friend","customer","counsel","psychology","social"],
-     learning:["learn","study","understand","read","course","practice","skill","knowledge","curious","explore","reading","theory"],
-     curiosity:["why","how","discover","investigate","experiment","question","research","explore","new","curious","nature","future"]
-   };
-   for(const [axis,words] of Object.entries(hits)){
-     const n=words.reduce((a,w)=>a+(t.includes(w)?1:0),0);
-     scores[axis]+=Math.min(n,3);
+   for(const [axis,words] of Object.entries(keywordMap)){
+     const n=words.reduce((total,word)=>{
+       const escaped=word.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+       return total+(new RegExp(`\\b${escaped}\\w*\\b`,"i").test(t)?1:0);
+     },0);
+     if(n) contributions[axis]=Math.max(contributions[axis]||0,Math.min(1,n*.35)*weight);
    }
+   return contributions;
  };
  answeredQs.forEach(q=>{
-   const base=axisByCategory[q.category]||{};
-   Object.entries(base).forEach(([axis,val])=>scores[axis]+=val);
+   const evidence={};
    const val=state.answers[q.id];
-   addText(Array.isArray(val)?val.join(" "):val);
-   if(q.type==="scale" && Number(val)){
-     const n=Number(val);
-     scores.Learning+=n*.25;scores.Curiosity+=n*.25;
+   // The question's dimension gives a small context signal; the selected
+   // answer or ranking supplies the stronger evidence when its wording does.
+   (questionContext[q.category]||[]).forEach(axis=>{evidence[axis]=.22});
+   if(q.type==="scale" && Number.isFinite(Number(val))){
+     const strength=Math.max(0,(Number(val)-3)/2);
+     if(strength>0)addText(q.prompt,strength,evidence);
+   }else if(q.type==="rank"&&Array.isArray(val)){
+     const ordered=(q.options||[]).map((option,index)=>({option,rank:Number(val[index])})).filter(item=>Number.isFinite(item.rank)&&item.rank>0).sort((a,b)=>a.rank-b.rank);
+     ordered.slice(0,2).forEach((item,index)=>addText(item.option,index===0?1:.45,evidence));
+   }else{
+     addText(Array.isArray(val)?val.join(" "):val,1,evidence);
    }
+   axes.forEach(axis=>{scores[axis]+=evidence[axis]||0});
  });
- const max=Math.max(...Object.values(scores));
- const normalized=Object.fromEntries(axes.map(a=>[a,Math.max(28,Math.round(scores[a]/max*100))]));
+ /* Completed activities add evidence to the dimensions their pathway uses.
+    Reflections influence the profile too, while a recorded verdict carries
+    more weight than simply opening an activity. */
+ const activityAxes={
+   tech:{Analytical:1.2,Curiosity:1.2,Learning:.8}, engineering:{Analytical:1.3,Creative:.5,Curiosity:1,Learning:.8},
+   science:{Analytical:1,Curiosity:1.3,Learning:1}, health:{People:1,Learning:1.2,Curiosity:.7},
+   society:{People:1.2,Curiosity:.8,Learning:.7}, business:{Analytical:.8,People:.8,Creative:.5},
+   arts:{Creative:1.4,Curiosity:.6,Learning:.5}, earth:{Curiosity:1,Learning:.8,People:.4},
+   service:{People:1,Learning:.5,Creative:.4}, public:{People:.8,Analytical:.6,Curiosity:.6}
+ };
+ activityEntries.forEach(([key,activity])=>{
+   const dims=activityAxes[key]||{};
+   const days=Array.isArray(activity.done)?new Set(activity.done).size:0;
+   const participation=days>0 ? .25+Math.min(4,days)*.08 : 0;
+   const verdict=activity.enjoyment==="yes" ? .35 : activity.enjoyment==="mixed" ? .2 : activity.enjoyment==="no" ? .1 : 0;
+   const engagement=Math.min(1,participation+verdict);
+   const evidence={};
+   addText(activity.reflection,engagement||1,evidence);
+   Object.entries(dims).forEach(([axis,weight])=>{evidence[axis]=Math.max(evidence[axis]||0,Math.min(1,weight*engagement))});
+   axes.forEach(axis=>{scores[axis]+=evidence[axis]||0});
+ });
+ const safeScores=Object.fromEntries(axes.map(a=>[a,Number.isFinite(Number(scores[a]))?Math.max(0,Number(scores[a])):0]));
+ const sampleCount=count+activityEntries.length;
+ const confidence=.45+.55*Math.min(1,sampleCount/5);
+ const normalized=Object.fromEntries(axes.map(a=>[a,Math.max(0,Math.min(100,Math.round(safeScores[a]/Math.max(1,sampleCount)*100*confidence)))]));
  const points=[normalized.Analytical,normalized.Creative,normalized.People,normalized.Learning,normalized.Curiosity];
  const cx=50,cy=50,r=45;
- const coords=points.map((v,i)=>{const angle=(-90+i*72)*Math.PI/180;const rr=r*(v/100);return `${(cx+Math.cos(angle)*rr).toFixed(1)}% ${(cy+Math.sin(angle)*rr).toFixed(1)}%`;});
+ const coords=points.map((v,i)=>{const angle=(-90+i*72)*Math.PI/180;const rr=r*(Math.max(8,v)/100);return `${(cx+Math.cos(angle)*rr).toFixed(1)}% ${(cy+Math.sin(angle)*rr).toFixed(1)}%`;});
  fill.style.clipPath=`polygon(${coords.join(",")})`;
  fill.classList.add("ready");
- status.textContent=count===20 ? "Updated from your 20 answers" : `${count}/20 answered (Live preview)`;
+ const evidenceLabel=activityEntries.length?`${activityEntries.length} activit${activityEntries.length===1?"y":"ies"}`:"";
+ status.textContent=`${count}/20 answered${evidenceLabel?` · ${evidenceLabel}`:""} · ${sampleCount<5?"early signal":"evidence index"}`;
+ bars.title="Evidence index based on your answers and recorded activities. It is not a probability or career match score.";
  bars.innerHTML=axes.map(a=>`<div class="interest-bar"><span>${a}</span><div class="interest-track"><i style="width:${normalized[a]}%"></i></div><b>${normalized[a]}</b></div>`).join("");
 }
 
@@ -2055,13 +1971,28 @@ function renderQuestion(){
   capture();
  }));
  $("#answerOpen")?.addEventListener("input",capture);$$("#answerRank select").forEach(x=>x.addEventListener("change",capture));
- $("#back").onclick=()=>{capture();state.qIndex=Math.max(0,state.qIndex-1);renderQuestion();$("#question")?.scrollIntoView({behavior:"smooth",block:"nearest"});};
+ $("#back").onclick=()=>{
+   // Saving/rerendering the dashboard must not prevent the question from
+   // changing if a secondary progress widget encounters a rendering error.
+   try{capture()}catch(err){console.error("Could not save the current answer:",err)}
+   state.qIndex=Math.max(0,state.qIndex-1);
+   saveState();
+   renderQuestion();
+   $("#question")?.scrollIntoView({behavior:"smooth",block:"nearest"});
+ };
  $("#next").onclick=()=>{
-   capture();
+   // Capture before changing qIndex so the answer is stored against the
+   // question currently on screen. Keep navigation independent from dashboard
+   // refreshes or progress-sync errors triggered by capture().
+   try{capture()}catch(err){console.error("Could not save the current answer:",err)}
    if(state.qIndex<19){
-     state.qIndex++;renderQuestion();$("#question")?.scrollIntoView({behavior:"smooth",block:"nearest"});
+     state.qIndex++;
+     saveState();
+     renderQuestion();
+     $("#question")?.scrollIntoView({behavior:"smooth",block:"nearest"});
    } else {
-     capture();renderInterestMap();
+     try{capture()}catch(err){console.error("Could not save the final answer:",err)}
+     renderInterestMap();
      archiveCurrentSession();
      try{trackSessionCompleted();trackCareersExplored(pathwaysByEvidence().slice(0,3).map(p=>p.name))}catch(e){}
      goTab("analysis");
@@ -2100,30 +2031,44 @@ function retakeQuestionnaire(){
 function renderAnalysis(){
  const qs=sessionQuestions(),answered=qs.filter(q=>state.answers[q.id]!=null&&state.answers[q.id]!=="").length;
  const categoryCounts={};qs.forEach(q=>{if(state.answers[q.id]!=null)categoryCounts[q.categoryLabel]=(categoryCounts[q.categoryLabel]||0)+1});
- const chips=Object.keys(categoryCounts).map(x=>`<span class="chip">${x}</span>`).join("");
+ const chips=Object.keys(categoryCounts).map(x=>`<span class="chip">${escapeHtml(x)}</span>`).join("");
  $("#analysisIntro").textContent=answered<20?`You have answered ${answered} of 20 selected questions. Complete the session for a fuller analysis.`:"Your responses are evaluated as qualitative signals. The analysis below presents hypotheses to test in the real world — never a rigid verdict.";
 
- // Contradictions & Open Uncertainty Detection
+ // A lightweight local summary should describe recorded signals only. It must
+ // not claim a personality or contradiction result that was never detected.
  const scaleAnswers=qs.filter(q=>q.type==="scale").map(q=>Number(state.answers[q.id])||0).filter(Boolean);
  const neutralCount=scaleAnswers.filter(v=>v===3).length;
  const isHighlyNeutral=scaleAnswers.length>0 && (neutralCount/scaleAnswers.length >= 0.45);
-
+ const signals=state.localAI?.signals||{};
+ const rankedSignals=(typeof LOCAL_AI!=="undefined"?LOCAL_AI.dimensions:SIGNAL_DIMENSIONS)
+   .map(name=>({name,value:Number(signals[name])||1}))
+   .filter(item=>item.value>1.15)
+   .sort((a,b)=>b.value-a.value);
+ const leadingSignals=rankedSignals.slice(0,2);
+ const styleHtml=leadingSignals.length
+   ? `<p>Your answers have so far raised signals around <b>${leadingSignals.map(x=>escapeHtml(DIM_LABELS[x.name]||x.name)).join("</b> and <b>")}</b>.</p><p class="muted">These are early clues from your answers, not a fixed description of you.</p>`
+   : `<p>There is not enough repeated evidence to describe a working style yet.</p><p class="muted">Answer more questions to build a useful picture from your responses.</p>`;
+ const contradictions=state.localAI?.contradictions||[];
  let uncertaintyHtml="";
  if(answered<20){
-   uncertaintyHtml=`<div class="notice"><b>Incomplete Data Signal:</b> You have answered ${answered} of 20 questions. The AI treats incomplete sessions with high uncertainty. Answer all 20 questions to unlock clear dimensional hypotheses.</div>`;
+   uncertaintyHtml=`<div class="notice"><b>Early signal:</b> You have answered ${answered} of 20 questions, so this summary may change as you continue.</div>`;
  } else if(isHighlyNeutral){
-   uncertaintyHtml=`<div class="notice"><b>Open Uncertainty Notice:</b> A noticeable portion of your scale responses were marked 'Neutral'. This frequently occurs when exploring unfamiliar fields or when your interests are equally balanced across multiple domains. Rather than forcing a single narrow career prediction, we recommend testing 2–3 contrasting pathways in short real-world projects.</div>`;
+   uncertaintyHtml=`<div class="notice"><b>Open uncertainty:</b> ${neutralCount} of ${scaleAnswers.length} rating answers were neutral. Try a few different kinds of work before narrowing your options.</div>`;
  } else {
-   uncertaintyHtml=`<div class="notice"><b>Open Uncertainty & Contradiction Check:</b> No severe conflicting contradictions were detected in your 20 answers. Your responses reflect consistent interest signals. However, remember that career satisfaction depends on day-to-day work environment, team culture, and continuous experimentation.</div>`;
+   uncertaintyHtml=`<div class="notice"><b>Keep exploring:</b> A short questionnaire cannot rule out conflicts or uncertainty. Use the answers and real-world experiments to check what fits you over time.</div>`;
  }
+ const contradictionHtml=contradictions.length
+   ? contradictions.map(item=>`<article class="signal"><b>${escapeHtml(item.signal||"Something to explore")}</b><p>${escapeHtml(item.evidence||"")}</p>${item.followUp?`<small>${escapeHtml(item.followUp)}</small>`:""}</article>`).join("")
+   : `<p class="muted">No specific tension has been recorded by the current checks. That does not mean your answers have no trade-offs; review them as you explore.</p>`;
 
  $("#analysis").innerHTML=`<div class="analysis-grid">
    <div class="analysis-box"><h3>Dimensions explored</h3><div class="chips2">${chips||"<span class=chip>Not enough data yet</span>"}</div><p class="muted" style="margin-top:10px">Your session sampled ten dimensions of interest. Twenty questions is a balanced sample, not a measurement — retaking it later adds genuinely new context.</p></div>
-   <div class="analysis-box"><h3>Possible working style hypothesis</h3><p><b>Working Style:</b> Focused problem investigation with purposeful collaboration. You appear to appreciate clear logic and tangible outputs.</p><p class="muted">Treat this as a working hypothesis to validate through actual projects, not a fixed personality label.</p></div>
-   <div class="analysis-box full"><h3>AI Uncertainty & Contradictions Check</h3>${uncertaintyHtml}</div>
+   <div class="analysis-box"><h3>Signals in your answers</h3>${styleHtml}</div>
+   <div class="analysis-box full"><h3>Uncertainty check</h3>${uncertaintyHtml}</div>
+   <div class="analysis-box full"><h3>Tensions to explore</h3>${contradictionHtml}</div>
    <div class="analysis-box"><h3>External-pressure reflection</h3><p class="muted">If answers regarding parent expectations, salary prestige, or peer trends pulled strongly against your personal hobbies, that tension is highlighted for your own reflection rather than scored as a mismatch.</p></div>
    <div class="analysis-box"><h3>Zero Fake Percentages</h3><p>YourPath. does not use misleading pseudo-scientific percentages like '97% career match'. Human curiosity is dynamic. We explain the explicit reasoning for each pathway so you can decide what makes sense.</p></div>
-   <div class="analysis-box full"><h3>Next recommended steps</h3><p>Review the recommended pathways below, compare 2–4 side-by-side in the Compare tab, and check the Education & Universities guide for relevant programs.</p><div style="display:flex;gap:10px;margin-top:14px"><button class="btn primary" onclick="goTab('pathways')">Explore pathways</button><button class="btn soft" onclick="goTab('compare')">Compare side-by-side</button><button class="btn soft" onclick="goTab('education')">Universities & Education</button></div></div>
+   <div class="analysis-box full"><h3>Next recommended steps</h3><p>Review the recommended pathways below and compare 2–4 side-by-side in the Compare tab.</p><div style="display:flex;gap:10px;margin-top:14px"><button class="btn primary" onclick="goTab('pathways')">Explore pathways</button><button class="btn soft" onclick="goTab('compare')">Compare side-by-side</button></div></div>
  </div>`;
 }
 
@@ -2356,7 +2301,6 @@ function pathCardHtml(p,evidence){
      <div class="path-actions">
        <button class="small-btn save" onclick="toggleSave('${escapeHtml(p.name)}')">${state.saved.includes(p.name)?iconSvg('bookmark',12)+' Saved':iconSvg('bookmark',12)+' Save'}</button>
        <button class="small-btn primary-btn" onclick="startExperimentFromPathway('${escapeHtml(p.name)}')">${iconSvg('play',12)} Try this pathway</button>
-       <button class="small-btn" onclick="viewPathwayEd('${escapeHtml(p.name)}')">${iconSvg('graduation',12)} Universities</button>
        <button class="small-btn" onclick="quickCompare('${escapeHtml(p.name)}')">${iconSvg('scale',12)} Compare</button>
      </div>
     </article>`;
@@ -2367,12 +2311,6 @@ function toggleSave(name){
  try{trackCareersExplored(name)}catch(e){}
  saveState();renderPathways();renderSaved();updateUI();
  toast(state.saved.includes(name)?"Pathway saved to your dashboard!":"Pathway removed from saved.");
-}
-
-function viewPathwayEd(name){
- state.eduPathway=name;
- goTab("education");
- renderEducation(name);
 }
 
 function quickCompare(name){
@@ -2395,7 +2333,6 @@ function renderSaved(){
      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
        <h3 style="margin:0">${p.iconKey?pathIcon(p):""} ${p.name}</h3>
        <div style="display:flex;gap:6px">
-         <button class="small-btn" onclick="viewPathwayEd('${escapeHtml(p.name)}')">Universities</button>
          <button class="small-btn" onclick="quickCompare('${escapeHtml(p.name)}')">${iconSvg('scale',12)} Compare</button>
          <button class="small-btn" onclick="toggleSave('${escapeHtml(p.name)}')">Remove</button>
        </div>
@@ -2481,7 +2418,7 @@ function renderCompare(){
        </tr>
        <tr>
          <th>Actions</th>
-         ${selectedPaths.map(p=>`<td><button class="small-btn save" onclick="toggleSave('${escapeHtml(p.name)}')">${state.saved.includes(p.name)?iconSvg('bookmark',12)+' Saved':iconSvg('bookmark',12)+' Save'}</button> <button class="small-btn" onclick="viewPathwayEd('${escapeHtml(p.name)}')">Universities ${iconSvg('arrowRight',12)}</button></td>`).join("")}
+         ${selectedPaths.map(p=>`<td><button class="small-btn save" onclick="toggleSave('${escapeHtml(p.name)}')">${state.saved.includes(p.name)?iconSvg('bookmark',12)+' Saved':iconSvg('bookmark',12)+' Save'}</button></td>`).join("")}
        </tr>
      </tbody>
    </table>
@@ -2798,30 +2735,329 @@ function renderRoadmapImpl(){
  `;
 }
 
-function loadProfile(){
- const f=$("#profile");if(!state.user)return;
+let communityCurrentFriend=null;
+let communitySearchTimer=null;
+let communityPollTimer=null;
+let communityLastMessageId=null;
+
+async function communityFetch(path,options={}){
+ const headers={...(options.headers||{})};
+ if(options.body&&!headers['Content-Type'])headers['Content-Type']='application/json';
+ const response=await fetch(path,{...options,headers,credentials:'same-origin'});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(data.error||'The community service could not be reached.');
+ return data;
+}
+function communityPersonCard(person,actions){
+ const initials=String(person.name||'S').trim().split(/\s+/).slice(0,2).map(part=>part[0]||'').join('').toUpperCase()||'S';
+ const location=[person.grade,person.country].filter(Boolean).join(' · ');
+ const avatar=typeof person.avatar==='string'&&/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(person.avatar)?`<img src="${person.avatar}" alt="">`:escapeHtml(initials);
+ return `<article class="community-person"><span class="community-avatar" aria-hidden="true">${avatar}</span><span class="community-person-copy"><b>${escapeHtml(person.name||'Student')}</b><small>${escapeHtml(location||'Student profile')}</small></span><span class="community-person-actions">${actions}</span></article>`;
+}
+function communityButton(action,userId,label,kind=''){
+ return `<button class="small-btn ${kind}" type="button" data-community-action="${escapeHtml(action)}" data-user-id="${escapeHtml(userId)}">${escapeHtml(label)}</button>`;
+}
+async function loadCommunityPeople(query=''){
+ const list=document.getElementById('communityPeople');if(!list)return;
+ list.innerHTML='<p class="muted">Searching opted-in profiles…</p>';
+ try{
+   const result=await communityFetch(`/api/community/people?q=${encodeURIComponent(query)}`);
+   const relations=communityState||{friends:[],incoming:[],outgoing:[]};
+   if(!result.people?.length){list.innerHTML='<p class="community-chat-empty">No profiles found. Students appear here only after choosing to show their profile in Settings.</p>';return;}
+   list.innerHTML=result.people.map(person=>{
+     const id=String(person.id);
+     if(relations.friends?.some(friend=>String(friend.id)===id))return communityPersonCard(person,communityButton('chat',id,'Message'));
+     if(relations.incoming?.some(friend=>String(friend.id)===id))return communityPersonCard(person,'<span class="community-pending-label">Request received</span>');
+     if(relations.outgoing?.some(friend=>String(friend.id)===id))return communityPersonCard(person,'<span class="community-pending-label">Request sent</span>');
+     return communityPersonCard(person,communityButton('request',id,'Add friend','primary-btn'));
+   }).join('');
+ }catch(err){list.innerHTML=`<p class="community-chat-empty">${escapeHtml(err.message)}</p>`;}
+}
+let communityState={friends:[],incoming:[],outgoing:[]};
+function renderCommunityContacts(data){
+ communityState=data;
+ const requests=document.getElementById('communityRequests');
+ const friends=document.getElementById('communityFriends');
+ const requestCount=document.getElementById('communityRequestCount');
+ const friendCount=document.getElementById('communityFriendCount');
+ const note=document.getElementById('communityPrivacyNote');
+ if(requestCount)requestCount.textContent=String(data.incoming.length+data.outgoing.length);
+ if(friendCount)friendCount.textContent=String(data.friends.length);
+ if(requests){
+   const incoming=data.incoming.map(person=>communityPersonCard(person,`${communityButton('accept',person.id,'Accept','primary-btn')}${communityButton('decline',person.id,'Decline')}`));
+   const outgoing=data.outgoing.map(person=>communityPersonCard(person,'<span class="community-pending-label">Waiting for reply</span>'));
+   requests.innerHTML=incoming.concat(outgoing).join('')||'<p class="community-chat-empty">No friend requests yet.</p>';
+ }
+ if(friends)friends.innerHTML=data.friends.map(person=>communityPersonCard(person,`${communityButton('chat',person.id,'Chat','primary-btn')}${communityButton('remove',person.id,'Remove')}`)).join('')||'<p class="community-chat-empty">Your accepted friends will appear here.</p>';
+ if(note)note.innerHTML=data.discoverable?'Your profile is discoverable. <a href="#" data-community-settings>Change this in Settings</a>.':'Your profile is hidden from search. <a href="#" data-community-settings>Turn on profile discovery in Settings</a>.';
+}
+async function renderCommunity(){
+ const people=document.getElementById('communityPeople');
+ if(people)people.innerHTML='<p class="muted">Loading student community…</p>';
+ try{
+   const data=await communityFetch('/api/community');
+   renderCommunityContacts(data);
+   await loadCommunityPeople(document.getElementById('communitySearch')?.value||'');
+   if(communityCurrentFriend&&!data.friends.some(person=>String(person.id)===String(communityCurrentFriend.id)))closeCommunityChat();
+ }catch(err){if(people)people.innerHTML=`<p class="community-chat-empty">${escapeHtml(err.message)}</p>`;}
+}
+function closeCommunityChat(){
+ communityCurrentFriend=null;communityLastMessageId=null;
+ const head=document.getElementById('communityChatHead'),messages=document.getElementById('communityMessages');
+ if(head)head.innerHTML='<span class="material-symbols-outlined" aria-hidden="true">forum</span><div><b>Choose a friend</b><small>Your messages are private to this conversation.</small></div>';
+ if(messages)messages.innerHTML='<p class="community-chat-empty">Accept a request or choose a friend to start chatting.</p>';
+ const form=document.getElementById('communityMessageForm');form?.querySelector('textarea')?.setAttribute('disabled','');form?.querySelector('button')?.setAttribute('disabled','');
+}
+async function refreshCommunityMessages(scrollToBottom=false){
+ if(!communityCurrentFriend)return;
+ const conversation=communityCurrentFriend;
+ try{
+   const result=await communityFetch(`/api/community/messages/${encodeURIComponent(conversation.id)}`);
+   if(communityCurrentFriend?.id!==conversation.id)return;
+   const pane=document.getElementById('communityMessages');if(!pane)return;
+   const oldLast=communityLastMessageId;
+   const list=result.messages||[];
+   communityLastMessageId=list.at(-1)?.id||null;
+   if(oldLast===communityLastMessageId&&!scrollToBottom)return;
+   const wasNearBottom=pane.scrollHeight-pane.scrollTop-pane.clientHeight<48;
+   pane.innerHTML=list.map(message=>{
+     const own=String(message.senderId)===String(state.user?.id);
+     const time=message.createdAt&&Number.isFinite(Date.parse(message.createdAt))?new Date(message.createdAt).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'';
+     return `<article class="community-message${own?' mine':''}">${escapeHtml(message.text)}${time?`<time>${escapeHtml(time)}</time>`:''}</article>`;
+   }).join('')||'<p class="community-chat-empty">No messages yet. Say hello.</p>';
+   if(scrollToBottom||wasNearBottom)pane.scrollTop=pane.scrollHeight;
+ }catch(err){
+   if(err.message.includes('accepting a friend request')){closeCommunityChat();return;}
+   const pane=document.getElementById('communityMessages');if(pane&&!communityLastMessageId)pane.innerHTML=`<p class="community-chat-empty">${escapeHtml(err.message)}</p>`;
+ }
+}
+function openCommunityChat(person){
+ communityCurrentFriend=person;communityLastMessageId=null;
+ const head=document.getElementById('communityChatHead');
+ if(head)head.innerHTML=`<span class="community-avatar" aria-hidden="true">${escapeHtml(String(person.name||'S').trim().split(/\s+/).slice(0,2).map(part=>part[0]||'').join('').toUpperCase()||'S')}</span><div><b>${escapeHtml(person.name||'Student')}</b><small>${escapeHtml([person.grade,person.country].filter(Boolean).join(' · ')||'Your friend')}</small></div>`;
+ const form=document.getElementById('communityMessageForm');form?.querySelector('textarea')?.removeAttribute('disabled');form?.querySelector('button')?.removeAttribute('disabled');
+ refreshCommunityMessages(true);
+}
+async function communityAction(action,userId){
+ try{
+   if(action==='request'){
+     const result=await communityFetch('/api/community/requests',{method:'POST',body:JSON.stringify({userId})});
+     toast(result.message||'Friend request sent.');
+   }else if(action==='chat'){
+     const person=[...communityState.friends,...communityState.incoming].find(item=>String(item.id)===String(userId))||communityPeopleLookup(userId);
+     if(person)openCommunityChat(person);
+     return;
+   }else{
+     const result=await communityFetch(`/api/community/friends/${encodeURIComponent(userId)}`,{method:'PATCH',body:JSON.stringify({action})});
+     toast(result.message||'Community updated.');
+   }
+   await renderCommunity();
+ }catch(err){toast(err.message||'Could not update the community.');}
+}
+function communityPeopleLookup(id){
+ const node=[...document.querySelectorAll('#communityPeople .community-person')].find(card=>[...card.querySelectorAll('[data-user-id]')].some(button=>String(button.dataset.userId)===String(id)));
+ if(!node)return null;
+ return {id,name:node.querySelector('.community-person-copy b')?.textContent||'Student',grade:node.querySelector('.community-person-copy small')?.textContent||''};
+}
+document.addEventListener('click',event=>{
+ const action=event.target.closest('[data-community-action]');
+ if(action){event.preventDefault();communityAction(action.dataset.communityAction,action.dataset.userId);return;}
+ const settings=event.target.closest('[data-community-settings]');
+ if(settings){event.preventDefault();goTab('settings');return;}
+});
+document.getElementById('communitySearch')?.addEventListener('input',event=>{
+ clearTimeout(communitySearchTimer);
+ communitySearchTimer=setTimeout(()=>loadCommunityPeople(event.target.value.trim()),220);
+});
+document.getElementById('communityMessageForm')?.addEventListener('submit',async event=>{
+ event.preventDefault();
+ if(!communityCurrentFriend)return;
+ const input=document.getElementById('communityMessageInput');const text=input?.value.trim();
+ if(!text)return;
+ const submit=event.currentTarget.querySelector('button');if(submit)submit.disabled=true;
+ try{
+   await communityFetch('/api/community/messages',{method:'POST',body:JSON.stringify({userId:communityCurrentFriend.id,text})});
+   input.value='';await refreshCommunityMessages(true);
+ }catch(err){toast(err.message||'Could not send this message.');}
+ finally{if(submit&&communityCurrentFriend)submit.disabled=false;}
+});
+if(typeof setInterval==='function'&&!communityPollTimer)communityPollTimer=setInterval(()=>{
+ if(document.getElementById('tab-community')?.classList.contains('active')&&communityCurrentFriend)refreshCommunityMessages(false);
+},5000);
+
+function loadSettings(){
+ const f=$("#settingsProfile");if(!state.user)return;
  for(const el of f.elements){
    if(el.name&&state.user[el.name]!=null)el.value=state.user[el.name];
  }
+ const pref=state.preferences||{theme:"light",reducedMotion:false};
+ const themeField=$("#settingTheme"), motionField=$("#settingReducedMotion");
+ if(themeField)themeField.value=pref.theme||"light";
+ if(motionField)motionField.checked=Boolean(pref.reducedMotion);
+ const communityField=$("#settingCommunityVisible");
+ if(communityField)communityField.checked=Boolean(pref.communityVisible||state.user.settings?.communityVisible);
+ const emailLabel=$("#settingsEmailAddress");if(emailLabel)emailLabel.textContent=state.user.email||"";
 }
 
-$("#profile").onsubmit=e=>{
+let profileDraftAvatar='';
+function profileInitials(name){return String(name||'Y').trim().split(/\s+/).slice(0,2).map(part=>part[0]||'').join('').toUpperCase()||'Y'}
+function renderProfileAvatar(node,avatar,name){
+ if(!node)return;
+ node.innerHTML='';
+ if(typeof avatar==='string'&&/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(avatar)){
+   const image=document.createElement('img');image.src=avatar;image.alt='';if(node.append)node.append(image);else node.appendChild(image);
+ }else node.textContent=profileInitials(name);
+}
+function syncProfileEditor(){
+ const name=state.user?.name||'';profileDraftAvatar=state.user?.settings?.avatar||'';
+ const input=document.getElementById('profileNickname');if(input)input.value=name;
+ renderProfileAvatar(document.getElementById('profilePicturePreview'),profileDraftAvatar,name);
+ renderProfileAvatar(document.getElementById('profileMenuAvatar'),profileDraftAvatar,name);
+}
+function closeProfilePopover(){const popover=document.getElementById('profilePopover'),button=document.getElementById('profileMenuButton');if(popover)popover.hidden=true;if(button)button.setAttribute('aria-expanded','false')}
+syncProfileEditor();
+document.getElementById('profileMenuButton')?.addEventListener('click',()=>{
+ if(!state.user){openLogin();toast('Log in to edit your profile.');return}
+ const popover=document.getElementById('profilePopover'),button=document.getElementById('profileMenuButton');
+ if(!popover)return;
+ const opening=popover.hidden;popover.hidden=!opening;button?.setAttribute('aria-expanded',String(opening));
+ if(opening){syncProfileEditor();document.getElementById('profilePopoverError').hidden=true;document.getElementById('profileNickname')?.focus()}
+});
+document.getElementById('profilePopoverClose')?.addEventListener('click',closeProfilePopover);
+function profileFileAsDataUrl(blob){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.onerror=()=>reject(new Error('That photo could not be read.'));reader.readAsDataURL(blob)})}
+function profileCanvasBlob(canvas,type,quality){return new Promise(resolve=>canvas.toBlob(resolve,type,quality))}
+async function optimizeProfilePhoto(file){
+ let bitmap;
+ try{bitmap=await createImageBitmap(file)}catch(err){throw new Error('This image could not be opened. Try a PNG, JPG, or WebP photo.')}
+ try{
+   let edge=512;
+   while(edge>=128){
+     const scale=Math.min(1,edge/Math.max(bitmap.width,bitmap.height));
+     const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+     const context=canvas.getContext('2d');if(!context)throw new Error('Your browser could not prepare this photo.');
+     context.drawImage(bitmap,0,0,canvas.width,canvas.height);
+     for(const quality of [.84,.72,.6]){
+       const blob=await profileCanvasBlob(canvas,'image/webp',quality);
+       if(blob&&blob.size<=600*1024)return await profileFileAsDataUrl(blob);
+     }
+     edge=Math.floor(edge*.75);
+   }
+   throw new Error('This photo could not be optimized. Try a smaller image file.');
+ }finally{bitmap.close?.()}
+}
+document.getElementById('profilePictureInput')?.addEventListener('change',event=>{
+ const file=event.target.files?.[0];if(!file)return;
+ const error=document.getElementById('profilePopoverError');
+ if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>100*1024*1024){error.textContent='Choose a PNG, JPG, or WebP image up to 100 MB.';error.hidden=false;event.target.value='';return}
+ const uploadButton=document.querySelector('.profile-upload-button');if(uploadButton)uploadButton.textContent='Optimizing photo…';error.hidden=true;
+ optimizeProfilePhoto(file).then(avatar=>{profileDraftAvatar=avatar;renderProfileAvatar(document.getElementById('profilePicturePreview'),profileDraftAvatar,state.user?.name)}).catch(err=>{error.textContent=err.message||'That photo could not be prepared.';error.hidden=false}).finally(()=>{if(uploadButton)uploadButton.textContent='Change photo'});
+});
+document.getElementById('profileRemovePicture')?.addEventListener('click',()=>{profileDraftAvatar='';const file=document.getElementById('profilePictureInput');if(file)file.value='';renderProfileAvatar(document.getElementById('profilePicturePreview'),'',state.user?.name)});
+document.getElementById('profilePopoverForm')?.addEventListener('submit',async event=>{
+ event.preventDefault();const form=event.currentTarget,name=document.getElementById('profileNickname').value.trim(),error=document.getElementById('profilePopoverError'),save=document.getElementById('profileSaveButton');
+ if(name.length<2||name.length>40){error.textContent='Your nickname must be between 2 and 40 characters.';error.hidden=false;return}
+ save.disabled=true;error.hidden=true;
+ try{
+   const response=await fetch('/api/user/display-profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,avatar:profileDraftAvatar})});
+   const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||`Profile service returned ${response.status}. Please try again.`);
+   state.user=data.user;saveState();updateUI();syncProfileEditor();closeProfilePopover();toast('Your profile has been updated.');
+   if(document.getElementById('tab-community')?.classList.contains('active'))renderCommunity();
+ }catch(err){error.textContent=err.message||'Could not save your profile.';error.hidden=false}
+ finally{save.disabled=false}
+});
+document.addEventListener('click',event=>{const wrap=document.querySelector('.profile-menu-wrap');if(wrap&&!wrap.contains(event.target))closeProfilePopover()});
+document.addEventListener('keydown',event=>{if(event.key==='Escape')closeProfilePopover()});
+
+$("#settingsProfile").onsubmit=async e=>{
  e.preventDefault();
  const updatedData = Object.fromEntries(new FormData(e.target).entries());
- state.user={...state.user,...updatedData};
- if(state.accounts && state.user.email){
-   state.accounts[state.user.email]={...state.accounts[state.user.email],...state.user};
- }
- saveState();
- updateUI();
- toast("Student profile & preferences updated.");
- if(state.user){
-   fetch('/api/user/profile', {
+ const previousUser=state.user;
+ try{
+   const res=await fetch('/api/user/profile', {
      method: 'POST',
      headers: { 'Content-Type': 'application/json' },
-     body: JSON.stringify({ userId: state.user.id, email: state.user.email, ...updatedData })
-   }).catch(()=>{});
- }
+     body: JSON.stringify(updatedData)
+   });
+   const data=await res.json().catch(()=>({}));
+   if(!res.ok)throw new Error(data.error||"Could not save your details.");
+   state.user=data.user||{...previousUser,...updatedData};saveState();updateUI();toast("Your account details have been saved.");
+ }catch(err){state.user=previousUser;loadSettings();toast(err.message||"Could not save your details. Try again.");}
+};
+
+function applySettingsPreferences(){
+ const prefs=state.preferences||{theme:"light",reducedMotion:false};
+ let theme=prefs.theme||"light";
+ if(theme==="system")theme=window.matchMedia?.("(prefers-color-scheme: dark)").matches?"dark":"light";
+ document.body.dataset.theme=theme;
+ document.body.classList.toggle("reduced-motion",Boolean(prefs.reducedMotion));
+}
+const systemThemeQuery=window.matchMedia?.("(prefers-color-scheme: dark)");
+systemThemeQuery?.addEventListener?.("change",()=>{if((state.preferences||{}).theme==="system")applySettingsPreferences()});
+
+$("#settingsPreferences").onsubmit=async e=>{
+ e.preventDefault();
+ const form=e.currentTarget;
+ const settings={theme:form.elements.theme.value,reducedMotion:form.elements.reducedMotion.checked,communityVisible:form.elements.communityVisible.checked};
+ if(!state.user){openLogin();toast("Log in to continue.");return}
+ // These are device-level display preferences. Apply and persist them before
+ // attempting account sync, so a stale/blocked API session cannot discard the
+ // student's choice or falsely make the save button appear broken.
+ state.preferences={...(state.preferences||{}),...settings};
+ state.user.settings={...(state.user.settings||{}),...settings};
+ saveState();
+ applySettingsPreferences();
+ try{
+   const res=await fetch('/api/user/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({settings})});
+   const data=await res.json().catch(()=>({}));
+   if(res.status===401){toast("Preferences saved on this device. Sign in again to sync them to your account.");return}
+   if(!res.ok){toast(data.error||"Preferences saved on this device, but could not sync to your account.");return}
+   toast("App preferences saved.");
+ }catch(err){toast("Preferences saved on this device. They could not sync to your account right now.");}
+};
+
+$("#passwordChangeForm").onsubmit=async e=>{
+ e.preventDefault();
+ const form=e.currentTarget, currentPassword=form.elements.currentPassword.value;
+ const newPassword=form.elements.newPassword.value, confirmPassword=form.elements.confirmPassword.value;
+ if(newPassword.length<8){toast("Your new password must be at least 8 characters.");return;}
+ if(newPassword!==confirmPassword){toast("The new passwords do not match.");form.elements.confirmPassword.focus();return;}
+ try{
+   const res=await fetch('/api/auth/password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({currentPassword,newPassword})});
+   const data=await res.json().catch(()=>({}));
+   if(!res.ok)throw new Error(data.error||"Could not update your password.");
+   form.reset();toast("Password updated. Other active sessions have been signed out.");
+ }catch(err){toast(err.message||"Could not update your password.");}
+};
+
+$("#exportDataBtn").onclick=()=>{
+ const exportData={exportedAt:new Date().toISOString(),account:state.user,profile:{name:state.user?.name,email:state.user?.email,grade:state.user?.grade,country:state.user?.country,targetCountry:state.user?.targetCountry,budget:state.user?.budget,goals:state.user?.goals},answers:state.answers,savedPathways:state.saved,savedNotes:state.savedNotes,experiments:state.experiments,questionSession:state.session,history:state.history,preferences:state.preferences,feedback:readStored('yp_feedback_v3',null),localUsageEvidence:readStored('yp_evidence_v1',null)};
+ const blob=new Blob([JSON.stringify(exportData,null,2)],{type:'application/json'}), url=URL.createObjectURL(blob), link=document.createElement('a');
+ link.href=url;link.download=`yourpath-data-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);toast("Your data export is ready.");
+};
+
+$("#cookieSettingsBtn").onclick=showCookiePreferences;
+$("#clearProgressBtn").onclick=async()=>{
+ if(!confirm("Clear your saved answers, pathways, experiments, and analysis history? Your account will remain."))return;
+ state.answers={};state.saved=[];state.savedNotes={};state.experiments={};state.history=[];state.qIndex=0;state.aiSession=null;state.aiResult=null;state.aiQuestion=null;state.localAI=null;state.localAIResult=null;
+ [scopedStoreKey(STORE.history),scopedStoreKey(AI_STORE.session),scopedStoreKey(AI_STORE.result),scopedStoreKey(LOCAL_AI_STORE.session),scopedStoreKey(LOCAL_AI_STORE.result),"yp_local_ai_session_v1","yp_local_ai_result_v1",STORE.history].forEach(key=>{try{localStorage.removeItem(key)}catch(err){}});
+ newSession();saveState();updateUI();goTab("settings");
+ try{const res=await fetch('/api/progress',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers:{},saved:[],savedNotes:{},experiments:{},session:state.session,qIndex:0})});if(!res.ok)throw new Error();toast("Saved exploration progress cleared.");}
+ catch(err){toast("Local progress cleared. Server sync could not be confirmed.");}
+};
+
+$("#deleteAccountBtn").onclick=async()=>{
+ if(!confirm("Permanently delete your account and all progress saved to YourPath? This cannot be undone."))return;
+ const password=prompt("Enter your current password to confirm account deletion:");
+ if(password===null)return;
+ try{
+   const res=await fetch('/api/user/account',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})});
+   const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data.error||"Could not delete your account.");
+   clearTimeout(_dbSyncTimeout);
+   [scopedStoreKey(STORE.history),scopedStoreKey(AI_STORE.session),scopedStoreKey(AI_STORE.result),scopedStoreKey(LOCAL_AI_STORE.session),scopedStoreKey(LOCAL_AI_STORE.result),"yp_feedback_v3","yp_evidence_v1"].forEach(key=>{try{localStorage.removeItem(key)}catch(err){}});
+   state.user=null;state.answers={};state.saved=[];state.savedNotes={};state.experiments={};state.history=[];state.session=null;state.aiSession=null;state.aiResult=null;state.aiQuestion=null;state.localAI=null;state.localAIResult=null;
+   [STORE.user,STORE.answers,STORE.saved,STORE.savedNotes,STORE.experiments,STORE.history,STORE.session,STORE.activeTab,STORE.activePage].forEach(key=>{try{localStorage.removeItem(key)}catch(err){}});
+   updateUI();showPage("home");toast("Your account and synced progress have been deleted.");
+ }catch(err){toast(err.message||"Could not delete your account.");}
 };
 
 $("#feedback").onsubmit=e=>{
@@ -2832,17 +3068,13 @@ $("#feedback").onsubmit=e=>{
  e.target.reset();toast("Feedback submitted. Thank you for helping improve YourPath.!");
 };
 
-$("#accept").onclick=()=>{localStorage.setItem(STORE.cookie,"accepted");$("#cookie").style.display="none";toast("Cookie preference saved.")};
-$("#essential").onclick=()=>{localStorage.setItem(STORE.cookie,"essential");$("#cookie").style.display="none";toast("Essential-only preference saved.")};
-$("#cookieSettings").onclick=()=>$("#cookie").style.display="flex";
-if(localStorage.getItem(STORE.cookie))$("#cookie").style.display="none";
-
-ensureSession();updateUI();renderQuestion();
-if(state.user){
-  showPage("dashboard");
-  const savedTab = localStorage.getItem(STORE.activeTab) || "overview";
-  goTab(savedTab);
+function showCookiePreferences(){
+  try{localStorage.setItem(STORE.cookie,"essential")}catch(err){}
+  toast("YourPath uses only essential sign-in and preference storage.");
 }
+$("#cookieSettings")?.addEventListener("click",showCookiePreferences);
+
+ensureSession();applySettingsPreferences();updateUI();renderQuestion();
 
 async function refreshCloudProgress(){
   if(!state.user || (!state.user.id && !state.user.email)) return;
@@ -2868,7 +3100,6 @@ refreshCloudProgress();
 window.newQuestionSession=()=>{newSession();renderQuestion();toast("New 20-question session generated.")};
 window.retakeQuestionnaire=retakeQuestionnaire;
 window.renderEducation=renderEducation;
-window.viewPathwayEd=viewPathwayEd;
 window.toggleComparePathway=toggleComparePathway;
 window.quickCompare=quickCompare;
 window.saveSavedNote=saveSavedNote;
@@ -2882,8 +3113,8 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){$$(".modal-backdrop
 
 /* ================= AI ORCHESTRATOR v5 ================= */
 const AI_STORE={session:'yp_ai_session_v5',result:'yp_ai_result_v5'};
-state.aiSession=localStorage.getItem(AI_STORE.session)||null;
-state.aiResult=JSON.parse(localStorage.getItem(AI_STORE.result)||'null');
+state.aiSession=localStorage.getItem(scopedStoreKey(AI_STORE.session))||null;
+state.aiResult=readStored(scopedStoreKey(AI_STORE.result),null);
 state.aiQuestion=null;
 
 function aiApi(path, body){
@@ -2894,7 +3125,7 @@ function setAIStatus(text,kind='idle'){
   if(!el){const head=document.querySelector('.dash-head');if(!head)return;el=document.createElement('div');el.id='aiStatus';el.className='ai-status';head.appendChild(el)}
   el.className=`ai-status ${kind}`;el.innerHTML=`<span class="ai-dot"></span><span>${escapeHtml(text)}</span>`;
 }
-function saveAI(){if(state.aiSession)localStorage.setItem(AI_STORE.session,state.aiSession);if(state.aiResult)localStorage.setItem(AI_STORE.result,JSON.stringify(state.aiResult));}
+function saveAI(){if(state.aiSession)localStorage.setItem(scopedStoreKey(AI_STORE.session),state.aiSession);if(state.aiResult)localStorage.setItem(scopedStoreKey(AI_STORE.result),JSON.stringify(state.aiResult));}
 async function startAISession(){
   if(!state.user)return;
   setAIStatus('AI is preparing your adaptive questionnaire…','loading');
@@ -2956,12 +3187,22 @@ function renderAIRoadmap(){
 }
 function renderInterestMapFromAI(){
  const m=state.aiResult?.interestMap;if(!m)return;
- const vals={Analytical:Number(m.analytical)||0,Creative:Number(m.creative)||0,People:Number(m.people)||0,Learning:Number(m.learning)||0,Curiosity:Number(m.curiosity)||0};
- $('#interestStatus').textContent='AI-filled from your 20 answers';
+ document.getElementById("interestRadar")?.classList.remove("is-empty");
+ const safeValue=value=>{const n=Number(value);return Number.isFinite(n)?Math.max(0,Math.min(100,n)):0};
+ const vals={Analytical:safeValue(m.analytical),Creative:safeValue(m.creative),People:safeValue(m.people),Learning:safeValue(m.learning),Curiosity:safeValue(m.curiosity)};
+ const activityAxes={tech:{Analytical:1.2,Curiosity:1.2,Learning:.8},engineering:{Analytical:1.3,Creative:.5,Curiosity:1,Learning:.8},science:{Analytical:1,Curiosity:1.3,Learning:1},health:{People:1,Learning:1.2,Curiosity:.7},society:{People:1.2,Curiosity:.8,Learning:.7},business:{Analytical:.8,People:.8,Creative:.5},arts:{Creative:1.4,Curiosity:.6,Learning:.5},earth:{Curiosity:1,Learning:.8,People:.4},service:{People:1,Learning:.5,Creative:.4},public:{People:.8,Analytical:.6,Curiosity:.6}};
+ const activities=Object.entries(state.experiments||{}).filter(([,activity])=>activity&&((Array.isArray(activity.done)&&activity.done.length>0)||activity.enjoyment!=null||String(activity.reflection||"").trim()));
+ activities.forEach(([key,activity])=>{
+   const days=Array.isArray(activity.done)?new Set(activity.done).size:0;
+   const strength=Math.min(12,days*2+(activity.enjoyment==="yes"?5:activity.enjoyment==="mixed"?3:activity.enjoyment==="no"?1:0));
+   Object.entries(activityAxes[key]||{}).forEach(([axis,weight])=>{vals[axis]=Math.min(100,vals[axis]+strength*weight)});
+ });
+ $('#interestStatus').textContent=`AI analysis · 20 answers${activities.length?` · ${activities.length} activities`:""}`;
  const order=['Analytical','Creative','People','Learning','Curiosity'];const points=order.map(k=>Math.max(8,Math.min(100,vals[k])));
  const cx=120,cy=120,r=82;const coords=points.map((v,i)=>{const a=(-Math.PI/2)+(i*2*Math.PI/5);return [cx+Math.cos(a)*r*(v/100),cy+Math.sin(a)*r*(v/100)]});
  $('#radarFill').style.clipPath=`polygon(${coords.map(([x,y])=>`${(x/240)*100}% ${(y/240)*100}%`).join(',')})`;
  $('#interestBars').innerHTML=order.map(k=>`<div><span>${k}</span><i><em style="width:${vals[k]}%"></em></i><b>${Math.round(vals[k])}</b></div>`).join('');
+ $('#interestBars').title="Evidence index from your completed answer analysis and recorded activities. It is not a probability or career match score.";
 }
 function updateAIJourney(){
  const complete=Boolean(state.aiResult);const n=state.qIndex||0;
@@ -2981,17 +3222,17 @@ goTab=function(name){originalGoTab(name);if(name==='questionnaire'){if(state.aiQ
 
 // Replace questionnaire start/finish behavior with AI interview when possible.
 const oldQuestionStart=window.newQuestionSession;
-window.newQuestionSession=()=>{state.aiSession=null;state.aiResult=null;state.aiQuestion=null;state.qIndex=0;localStorage.removeItem(AI_STORE.session);localStorage.removeItem(AI_STORE.result);startAISession();};
+window.newQuestionSession=()=>{state.aiSession=null;state.aiResult=null;state.aiQuestion=null;state.qIndex=0;localStorage.removeItem(scopedStoreKey(AI_STORE.session));localStorage.removeItem(scopedStoreKey(AI_STORE.result));startAISession();};
 
 // Update signup/login to start an AI-controlled journey.
 // The real work — server-backed account creation, duplicate rejection,
 // password verification and progress restore — lives in the handlers defined
-// above (#signupForm / #loginForm). Those run the authentication loader and
+// above (#signupForm / #homeLoginForm). Those run the authentication loader and
 // the flip hand-over into the student workspace. Here we only add the
 // AI-journey start on top, so every path stays in sync instead of replacing
 // the server-backed logic with a weaker local-only version.
 const oldSignup= $('#signupForm').onsubmit;
-const oldLogin=$('#loginForm').onsubmit;
+const oldLogin=$('#homeLoginForm').onsubmit;
 
 $('#signupForm').onsubmit=async e=>{
  await oldSignup(e);
@@ -3008,7 +3249,7 @@ $('#signupForm').onsubmit=async e=>{
 // an unknown email is rejected rather than silently turned into a new user,
 // which would let anyone in by typing an address. The signup flow is the only
 // path that creates accounts.
-$('#loginForm').onsubmit=async e=>{
+$('#homeLoginForm').onsubmit=async e=>{
  await oldLogin(e);
  if(!state.user) return;
  updateUI();
@@ -3169,9 +3410,9 @@ function localAIState(){
   if(!state.localAI) state.localAI={asked:[],history:[],signals:Object.fromEntries(LOCAL_AI.dimensions.map(x=>[x,1])),catEvidence:{},pressure:{},contradictions:[],started:Date.now(),complete:false};
   return state.localAI;
 }
-function saveLocalAI(){localStorage.setItem(LOCAL_AI_STORE.session,JSON.stringify(state.localAI||null));localStorage.setItem(LOCAL_AI_STORE.result,JSON.stringify(state.localAIResult||null));saveState();}
+function saveLocalAI(){localStorage.setItem(scopedStoreKey(LOCAL_AI_STORE.session),JSON.stringify(state.localAI||null));localStorage.setItem(scopedStoreKey(LOCAL_AI_STORE.result),JSON.stringify(state.localAIResult||null));saveState();}
 function loadLocalAI(){
-  try{state.localAI=JSON.parse(localStorage.getItem(LOCAL_AI_STORE.session)||'null');state.localAIResult=JSON.parse(localStorage.getItem(LOCAL_AI_STORE.result)||'null')}catch(e){}
+  try{state.localAI=readStored(scopedStoreKey(LOCAL_AI_STORE.session),null);state.localAIResult=readStored(scopedStoreKey(LOCAL_AI_STORE.result),null)}catch(e){}
 }
 loadLocalAI();
 
@@ -3357,69 +3598,6 @@ function evidenceSummary(){
  };
 }
 
-/* ================================================================
-   AUTH CONSENT GATE
-   A student must read and accept the Privacy Policy and the
-   Terms & Conditions before the profile form is reachable.
-   ================================================================ */
-(function initConsentGate(){
-  const consentPolicies=document.getElementById('consentPolicies');
-  const consentAge=document.getElementById('consentAge');
-  const consentAccept=document.getElementById('consentAccept');
-  const consentCancel=document.getElementById('consentCancel');
-  const consentStep=document.getElementById('consentStep');
-  const signupStep=document.getElementById('signupStep');
-  const signupForm=document.getElementById('signupForm');
-  const authDialog=document.querySelector('#signupModal .modal') || document.querySelector('#authModal .modal');
-  if(!consentPolicies||!consentAccept||!signupForm)return;
-
-  function syncConsentButton(){
-    const agreed=Boolean(consentPolicies.checked&&consentAge&&consentAge.checked);
-    consentAccept.disabled=!agreed;
-    consentAccept.setAttribute('aria-disabled',String(!agreed));
-  }
-
-  function resetConsentGate(){
-    consentPolicies.checked=false;
-    if(consentAge)consentAge.checked=false;
-    syncConsentButton();
-    consentStep&&consentStep.classList.remove('hidden');
-    signupStep&&signupStep.classList.add('hidden');
-  }
-
-  consentPolicies.addEventListener('change',syncConsentButton);
-  consentAge&&consentAge.addEventListener('change',syncConsentButton);
-
-  consentAccept.addEventListener('click',()=>{
-    if(consentAccept.disabled)return;
-    consentStep&&consentStep.classList.add('hidden');
-    signupStep&&signupStep.classList.remove('hidden');
-    authDialog&&authDialog.scrollTo({top:0,behavior:'smooth'});
-    const firstField=signupForm.querySelector('input[name="name"]');
-    firstField&&firstField.focus();
-  });
-
-  consentCancel&&consentCancel.addEventListener('click',()=>closeModal('signupModal'));
-
-  window.resetConsentGate=resetConsentGate;
-
-  // Account creation is impossible without the consent step being completed.
-  const originalSubmit=signupForm.onsubmit;
-  signupForm.onsubmit=function(event){
-    if(!(consentPolicies.checked&&(!consentAge||consentAge.checked))){
-      event.preventDefault();
-      window.openSignup();
-      toast('Please read and accept the Privacy Policy and Terms & Conditions first.');
-      return false;
-    }
-    if(typeof originalSubmit==='function')return originalSubmit.call(this,event);
-    return false;
-  };
-
-  syncConsentButton();
-})();
-
-
 (function initLegalLinks(){
   const termsFoot=document.getElementById('termsFoot');
   termsFoot&&(termsFoot.onclick=()=>openModal('termsModal'));
@@ -3458,6 +3636,106 @@ document.querySelectorAll('.modal-backdrop').forEach(backdrop=>{
     if(event.target===backdrop)backdrop.classList.add('hidden');
   });
 });
+
+const restoreScreenWatchdog=window.setTimeout(()=>document.body.classList.remove('session-restoring'),7000);
+function restoreCachedStudentWorkspace(){
+  const cachedUser=readStored(STORE.user,null);
+  if(!cachedUser?.id||!cachedUser?.email)return false;
+
+  // A prototype workspace can still resume from its sanitized browser copy
+  // when the hosted session store is unavailable after a refresh or restart.
+  // Keep this fallback student-only; server endpoints continue to enforce auth.
+  state.user={...cachedUser,role:'student'};
+  state.serverSessionAvailable=false;
+  state.answers=readStored(STORE.answers,{});
+  state.saved=readStored(STORE.saved,[]);
+  state.session=readStored(STORE.session,null);
+  state.savedNotes=readStored(STORE.savedNotes,{});
+  state.experiments=readStored(STORE.experiments,{});
+  state.preferences=readStored(STORE.preferences,{theme:'light',reducedMotion:false});
+
+  const savedPage=localStorage.getItem(STORE.activePage);
+  const destination=savedPage&&document.getElementById(savedPage)?.classList.contains('page')&&savedPage!=='home'
+    ?savedPage:'dashboard';
+  showPage(destination);
+  try{
+    loadAccountScopedState(false);
+    ensureSession();
+    applySettingsPreferences();
+    updateUI();
+    if(destination==='dashboard'){
+      const requestedTab=localStorage.getItem(STORE.activeTab)||'overview';
+      const validTabs=['overview','questionnaire','analysis','pathways','compare','roadmaps','experiments','saved','history','community','settings','feedback'];
+      goTab(validTabs.includes(requestedTab)?requestedTab:'overview');
+    }
+  }catch(restoreError){
+    console.error('Could not fully restore the cached student workspace:',restoreError);
+    updateUI();
+  }
+  return true;
+}
+(async function restoreAuthenticatedSession(){
+  let authenticated=false;
+  let destination='dashboard';
+  try{
+    const response=await fetch('/api/auth/session',{cache:'no-store'});
+    if(!response.ok){
+      if(restoreCachedStudentWorkspace())return;
+      state.user=null;
+      try{localStorage.removeItem(STORE.user)}catch(err){}
+      showPage('home');
+      return;
+    }
+    const payload=await response.json();
+    if(!payload?.user){
+      if(restoreCachedStudentWorkspace())return;
+      showPage('home');return;
+    }
+    state.user=payload.user;
+    state.serverSessionAvailable=true;
+    authenticated=true;
+    const savedPage=localStorage.getItem(STORE.activePage);
+    if(savedPage&&document.getElementById(savedPage)?.classList.contains('page')&&savedPage!=='home')destination=savedPage;
+    const progress=payload.progress||{};
+    state.answers=progress.answers||{};
+    state.saved=Array.isArray(progress.saved)?progress.saved:[];
+    state.savedNotes=progress.savedNotes&&typeof progress.savedNotes==='object'?progress.savedNotes:{};
+    state.experiments=progress.experiments&&typeof progress.experiments==='object'?progress.experiments:{};
+    state.session=null;
+    if(progress.session?.ids)state.session=progress.session;
+    if(Number.isFinite(progress.qIndex))state.qIndex=progress.qIndex;
+    state.preferences={...(state.preferences||{}),...(state.user.settings||{})};
+    // Reveal the signed-in page before rendering its widgets so a UI error
+    // cannot strand a valid session on the login screen.
+    showPage(destination);
+    try{
+      loadAccountScopedState(false);
+      ensureSession();saveState();applySettingsPreferences();updateUI();
+      if(destination==='dashboard'){
+        const requestedTab=localStorage.getItem(STORE.activeTab)||'overview';
+        const validTabs=['overview','questionnaire','analysis','pathways','compare','roadmaps','experiments','saved','history','community','settings','feedback'];
+        goTab(validTabs.includes(requestedTab==='profile'?'settings':requestedTab)?(requestedTab==='profile'?'settings':requestedTab):'overview');
+      }
+    }catch(renderError){
+      console.error('Could not fully restore the previous view:',renderError);
+      showPage(destination);
+    }
+  }catch(err){
+    if(authenticated){
+      // The server confirmed the session. Keep the student signed in and on
+      // their last page even if optional progress or dashboard rendering fails.
+      showPage(destination);
+    }else{
+      if(restoreCachedStudentWorkspace())return;
+      state.user=null;
+      try{updateUI()}catch(updateError){console.error('Could not refresh signed-out UI:',updateError)}
+      showPage('home');
+    }
+  }finally{
+    window.clearTimeout(restoreScreenWatchdog);
+    document.body.classList.remove('session-restoring');
+  }
+})();
 
 
 (function revealAfterTabChange(){
