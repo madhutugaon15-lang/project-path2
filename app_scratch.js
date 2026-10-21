@@ -945,11 +945,10 @@ $("#signupForm").onsubmit=async e=>{
  closeModal("signupModal");
  closeModal("authModal");
 
- const firstName = registeredUser.name ? registeredUser.name.trim().split(" ")[0] : "Student";
  showAuthLoader({
    mode:"signup",
    badge:"ACCOUNT REGISTRATION",
-   title:`Welcome to YourPath., ${firstName}!`,
+   title:`Welcome back, ${registeredUser.name||"Student"}!`,
    subtitle:"Preparing your 20 personalised questions and your workspace...",
    onComplete:()=>{
      // Navigate first so a rendering or animation issue cannot leave a
@@ -1022,11 +1021,10 @@ $("#homeLoginForm").onsubmit=async e=>{
  closeModal("loginModal");
  closeModal("authModal");
 
- const firstName=state.user && state.user.name ? state.user.name.trim().split(" ")[0] : "there";
  showAuthLoader({
    mode:"login",
    badge:"SESSION AUTHENTICATED",
-   title:`Welcome back, ${firstName}!`,
+   title:`Welcome back, ${state.user?.name||"there"}!`,
    subtitle:"Loading your student profile, questionnaire answers & saved pathways...",
    onComplete:()=>{
      // Switch pages before refreshing dashboard widgets; a widget error must

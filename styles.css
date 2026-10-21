@@ -3966,6 +3966,13 @@ body[data-theme="dark"] .session-restore-screen small { color: #9eb3d5; }
 /* Authenticated hand-off screen */
 .auth-loader-backdrop { background: rgba(231,239,249,.78); backdrop-filter: blur(12px) saturate(125%); -webkit-backdrop-filter: blur(12px) saturate(125%); }
 .auth-loader-card { display: block; width: min(760px,94vw); padding: 25px 28px 28px; border: 1px solid #dce7f4; border-radius: 20px; background: #fff; text-align: left; box-shadow: 0 28px 80px rgba(22,48,82,.2); animation: authLoaderEnter .32s cubic-bezier(.2,.8,.2,1) both; }
+.auth-loader-card { width: min(520px,94vw); }
+.auth-loader-card .loader-badge,.auth-loader-card #loaderSub,.auth-loader-card .loader-progress-info { display: none; }
+.auth-loader-main { display: block; padding-top: 25px; }
+.auth-loader-intro { align-items: center; padding: 8px 0 17px; text-align: center; }
+.auth-loader-spinner { margin: 0 0 21px; }
+.auth-loader-card h3 { max-width: none; margin: 0; text-align: center; }
+.auth-loader-main .loader-bar-wrap { height: 5px; margin-top: 20px; background: #eaf0f6; box-shadow: none; }
 @keyframes authLoaderEnter { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 .auth-loader-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid #edf1f6; }
 .auth-loader-brand { display: grid; gap: 2px; }
@@ -4028,6 +4035,15 @@ body[data-theme="dark"] .auth-loader-main .loader-bar-wrap { background: #263b58
   .loader-step-item { min-height: 31px; font-size: 10px; }
   .auth-loader-main .loader-progress-info { margin-top: 0; }
 }
+
+/* During sign-in, keep the transient hand-off focused on the student's greeting. */
+.auth-loader-card { width: min(520px,94vw); }
+.auth-loader-card .loader-badge,.auth-loader-card #loaderSub,.auth-loader-card .loader-progress-info { display: none; }
+.auth-loader-main { display: block; padding-top: 25px; }
+.auth-loader-intro { align-items: center; padding: 8px 0 17px; text-align: center; }
+.auth-loader-spinner { margin: 0 0 21px; }
+.auth-loader-card h3 { max-width: none; margin: 0; text-align: center; }
+.auth-loader-main .loader-bar-wrap { height: 5px; margin-top: 20px; background: #eaf0f6; box-shadow: none; }
 
 /* Dashboard pathway shortlist and interest snapshot */
 #dashboard.active .pathway-overview-card { padding: 21px; background: linear-gradient(145deg,#fff 0%,#fbfdff 100%); }
