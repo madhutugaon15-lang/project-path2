@@ -1,4 +1,4 @@
-﻿const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 
 
 // Some local previews serve the frontend statically, so relative /api calls
@@ -2964,10 +2964,21 @@ document.getElementById('profilePopoverForm')?.addEventListener('submit',async e
  if(name.length<2||name.length>40){error.textContent='Your nickname must be between 2 and 40 characters.';error.hidden=false;return}
  save.disabled=true;error.hidden=true;
  try{
+   // A cached workspace can remain open after the server session expires. Keep
+   // profile edits (including the selected photo) in that workspace instead
+   // of discarding them with a misleading sign-in error.
+   const saveProfileLocally=()=>{
+     state.user={...state.user,name,settings:{...(state.user?.settings||{}),avatar:profileDraftAvatar}};
+     state.serverSessionAvailable=false;saveState();updateUI();syncProfileEditor();closeProfilePopover();
+     toast('Profile saved on this device. Sign in again to sync it to your account.');
+   };
+   if(state.serverSessionAvailable===false){saveProfileLocally();return}
    const profilePayload=JSON.stringify({name,avatar:profileDraftAvatar});
    let response=await fetch('/api/user/display-profile',{method:'POST',headers:{'Content-Type':'application/json'},body:profilePayload});
    if(response.status===404)response=await fetch('/api/user/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:profilePayload});
-   const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||`Profile service returned ${response.status}. Please try again.`);
+   const data=await response.json().catch(()=>({}));
+   if(response.status===401){saveProfileLocally();return}
+   if(!response.ok)throw new Error(data.error||`Profile service returned ${response.status}. Please try again.`);
    if(data.user?.settings?.avatar!==profileDraftAvatar)throw new Error('Your nickname was saved, but this server version cannot save profile photos yet. Please try again after the app updates.');
    state.user=data.user;saveState();updateUI();syncProfileEditor();closeProfilePopover();toast('Your profile has been updated.');
    if(document.getElementById('tab-community')?.classList.contains('active'))renderCommunity();
@@ -3760,3 +3771,4 @@ function restoreCachedStudentWorkspace(){
     });
   };
 })();
+
