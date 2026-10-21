@@ -66,6 +66,14 @@ function readStored(key,fallback){try{const value=localStorage.getItem(key);retu
 const legacySavedUser=readStored(STORE.user,null);
 if(legacySavedUser&&typeof legacySavedUser==='object')delete legacySavedUser.password;
 const state={user:null,serverSessionAvailable:null,answers:readStored("yp_answers_v3",{}),saved:readStored("yp_saved_v3",[]),session:readStored("yp_question_session_v3",null),history:readStored("yp_history_v3",[]),savedNotes:readStored("yp_saved_notes_v3",{}),experiments:readStored("yp_experiments_v3",{}),preferences:readStored("yp_preferences_v1",{theme:"light",reducedMotion:false}),qIndex:0,compareSelected:[],eduPathway:null};
+function mergeAccountPreferences(accountSettings={}){
+ const localSettings=readStored(STORE.preferences,null);
+ state.preferences={...(state.preferences||{}),...(accountSettings||{})};
+ // Keep this browser's chosen appearance when the account copy is stale or
+ // its last settings sync failed. Other account settings still come from server.
+ if(localSettings&&['light','dark','system'].includes(localSettings.theme))state.preferences.theme=localSettings.theme;
+ if(localSettings&&typeof localSettings.reducedMotion==='boolean')state.preferences.reducedMotion=localSettings.reducedMotion;
+}
 try{localStorage.removeItem("yp_accounts_v3");}catch(e){}
 function scopedStoreKey(key,user=state.user){return `${key}_${encodeURIComponent(user?.id||'guest')}`}
 function loadAccountScopedState(fresh=false){
@@ -938,7 +946,7 @@ $("#signupForm").onsubmit=async e=>{
  state.user = registeredUser;
  state.serverSessionAvailable=true;
  loadAccountScopedState(true);
- state.preferences={...(state.preferences||{}),...(registeredUser.settings||{})};
+ mergeAccountPreferences(registeredUser.settings);
  state.answers = {};
  newSession();
  saveState();
@@ -997,7 +1005,7 @@ $("#homeLoginForm").onsubmit=async e=>{
  state.user = loggedInUser;
  state.serverSessionAvailable=true;
  loadAccountScopedState(false);
- state.preferences={...(state.preferences||{}),...(loggedInUser.settings||{})};
+ mergeAccountPreferences(loggedInUser.settings);
 
  if (fetchedProgress) {
    // Restore this account's saved progress from the database. Empty values
@@ -3705,7 +3713,7 @@ function restoreCachedStudentWorkspace(){
     state.session=null;
     if(progress.session?.ids)state.session=progress.session;
     if(Number.isFinite(progress.qIndex))state.qIndex=progress.qIndex;
-    state.preferences={...(state.preferences||{}),...(state.user.settings||{})};
+    mergeAccountPreferences(state.user.settings);
     // Reveal the signed-in page before rendering its widgets so a UI error
     // cannot strand a valid session on the login screen.
     showPage(destination);
