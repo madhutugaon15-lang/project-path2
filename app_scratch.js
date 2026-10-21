@@ -2956,8 +2956,11 @@ document.getElementById('profilePopoverForm')?.addEventListener('submit',async e
  if(name.length<2||name.length>40){error.textContent='Your nickname must be between 2 and 40 characters.';error.hidden=false;return}
  save.disabled=true;error.hidden=true;
  try{
-   const response=await fetch('/api/user/display-profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,avatar:profileDraftAvatar})});
+   const profilePayload=JSON.stringify({name,avatar:profileDraftAvatar});
+   let response=await fetch('/api/user/display-profile',{method:'POST',headers:{'Content-Type':'application/json'},body:profilePayload});
+   if(response.status===404)response=await fetch('/api/user/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:profilePayload});
    const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||`Profile service returned ${response.status}. Please try again.`);
+   if(data.user?.settings?.avatar!==profileDraftAvatar)throw new Error('Your nickname was saved, but this server version cannot save profile photos yet. Please try again after the app updates.');
    state.user=data.user;saveState();updateUI();syncProfileEditor();closeProfilePopover();toast('Your profile has been updated.');
    if(document.getElementById('tab-community')?.classList.contains('active'))renderCommunity();
  }catch(err){error.textContent=err.message||'Could not save your profile.';error.hidden=false}

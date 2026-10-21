@@ -838,6 +838,9 @@ app.get('/api/progress/:userId', requireSession, async (req, res) => {
 // 6. Update Profile
 app.post('/api/user/profile', requireSession, async (req, res) => {
   const { name, phone, country, grade, age, school, targetCountry, budget, goals } = req.body || {};
+  const avatarProvided = Object.prototype.hasOwnProperty.call(req.body || {}, 'avatar');
+  const avatar = req.body?.avatar === '' ? '' : safeProfileAvatar(req.body?.avatar);
+  if (avatarProvided && req.body.avatar && !avatar) return res.status(400).json({ error: 'Choose a valid optimized profile image.' });
   const userId = req.authUser.id;
   const email = req.authUser.email;
 
@@ -861,10 +864,11 @@ app.post('/api/user/profile', requireSession, async (req, res) => {
           target_country = COALESCE($7, target_country),
           budget = COALESCE($8, budget),
           goals = COALESCE($9, goals),
+          settings = CASE WHEN $11::boolean THEN COALESCE(settings, '{}'::jsonb) || jsonb_build_object('avatar', $12::text) ELSE settings END,
           updated_at = NOW()
         WHERE id = $10
         RETURNING *
-      `, [name, phone, country, grade, age, school, targetCountry, budget, goals, targetUserId]);
+      `, [name, phone, country, grade, age, school, targetCountry, budget, goals, targetUserId, avatarProvided, avatar]);
 
       if (updated.rows.length === 0) return res.status(404).json({ error: 'User not found' });
       return res.json({ message: 'Profile updated successfully', user: sanitizeUser(updated.rows[0]) });
@@ -880,6 +884,11 @@ app.post('/api/user/profile', requireSession, async (req, res) => {
       if (targetCountry != null) u.target_country = targetCountry;
       if (budget != null) u.budget = budget;
       if (goals != null) u.goals = goals;
+      if (avatarProvided) {
+        let settings = u.settings || {};
+        if (typeof settings === 'string') { try { settings = JSON.parse(settings); } catch (err) { settings = {}; } }
+        u.settings = { ...settings, avatar };
+      }
       u.updated_at = new Date().toISOString();
       persistLocalAccounts();
       return res.json({ message: 'Profile updated successfully', user: sanitizeUser(u) });
