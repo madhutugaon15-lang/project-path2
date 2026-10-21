@@ -2920,6 +2920,11 @@ function syncProfileEditor(){
  renderProfileAvatar(document.getElementById('profilePicturePreview'),profileDraftAvatar,name);
  renderProfileAvatar(document.getElementById('profileMenuAvatar'),profileDraftAvatar,name);
 }
+function setProfileEditorError(message=''){
+ const error=document.getElementById('profilePopoverError');
+ if(error){error.textContent=message;error.hidden=!message}
+ else if(message)toast(message);
+}
 function closeProfilePopover(){const popover=document.getElementById('profilePopover'),button=document.getElementById('profileMenuButton');if(popover)popover.hidden=true;if(button)button.setAttribute('aria-expanded','false')}
 syncProfileEditor();
 document.getElementById('profileMenuButton')?.addEventListener('click',()=>{
@@ -2927,7 +2932,7 @@ document.getElementById('profileMenuButton')?.addEventListener('click',()=>{
  const popover=document.getElementById('profilePopover'),button=document.getElementById('profileMenuButton');
  if(!popover)return;
  const opening=popover.hidden;popover.hidden=!opening;button?.setAttribute('aria-expanded',String(opening));
- if(opening){syncProfileEditor();document.getElementById('profilePopoverError').hidden=true;document.getElementById('profileNickname')?.focus()}
+ if(opening){syncProfileEditor();setProfileEditorError();document.getElementById('profileNickname')?.focus()}
 });
 document.getElementById('profilePopoverClose')?.addEventListener('click',closeProfilePopover);
 function profileFileAsDataUrl(blob){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.onerror=()=>reject(new Error('That photo could not be read.'));reader.readAsDataURL(blob)})}
@@ -2953,16 +2958,15 @@ async function optimizeProfilePhoto(file){
 }
 document.getElementById('profilePictureInput')?.addEventListener('change',event=>{
  const file=event.target.files?.[0];if(!file)return;
- const error=document.getElementById('profilePopoverError');
- if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>100*1024*1024){error.textContent='Choose a PNG, JPG, or WebP image up to 100 MB.';error.hidden=false;event.target.value='';return}
- const uploadButton=document.querySelector('.profile-upload-button');if(uploadButton)uploadButton.textContent='Optimizing photo…';error.hidden=true;
- optimizeProfilePhoto(file).then(avatar=>{profileDraftAvatar=avatar;renderProfileAvatar(document.getElementById('profilePicturePreview'),profileDraftAvatar,state.user?.name)}).catch(err=>{error.textContent=err.message||'That photo could not be prepared.';error.hidden=false}).finally(()=>{if(uploadButton)uploadButton.textContent='Change photo'});
+ if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>100*1024*1024){setProfileEditorError('Choose a PNG, JPG, or WebP image up to 100 MB.');event.target.value='';return}
+ const uploadButton=document.querySelector('.profile-upload-button');if(uploadButton)uploadButton.textContent='Optimizing photo…';setProfileEditorError();
+ optimizeProfilePhoto(file).then(avatar=>{profileDraftAvatar=avatar;renderProfileAvatar(document.getElementById('profilePicturePreview'),profileDraftAvatar,state.user?.name)}).catch(err=>{setProfileEditorError(err.message||'That photo could not be prepared.')}).finally(()=>{if(uploadButton)uploadButton.textContent='Change photo'});
 });
 document.getElementById('profileRemovePicture')?.addEventListener('click',()=>{profileDraftAvatar='';const file=document.getElementById('profilePictureInput');if(file)file.value='';renderProfileAvatar(document.getElementById('profilePicturePreview'),'',state.user?.name)});
 document.getElementById('profilePopoverForm')?.addEventListener('submit',async event=>{
- event.preventDefault();const form=event.currentTarget,name=document.getElementById('profileNickname').value.trim(),error=document.getElementById('profilePopoverError'),save=document.getElementById('profileSaveButton');
- if(name.length<2||name.length>40){error.textContent='Your nickname must be between 2 and 40 characters.';error.hidden=false;return}
- save.disabled=true;error.hidden=true;
+ event.preventDefault();const name=(document.getElementById('profileNickname')?.value||'').trim(),save=document.getElementById('profileSaveButton');
+ if(name.length<2||name.length>40){setProfileEditorError('Your nickname must be between 2 and 40 characters.');return}
+ if(save)save.disabled=true;setProfileEditorError();
  try{
    // A cached workspace can remain open after the server session expires. Keep
    // profile edits (including the selected photo) in that workspace instead
@@ -2982,8 +2986,8 @@ document.getElementById('profilePopoverForm')?.addEventListener('submit',async e
    if(data.user?.settings?.avatar!==profileDraftAvatar)throw new Error('Your nickname was saved, but this server version cannot save profile photos yet. Please try again after the app updates.');
    state.user=data.user;saveState();updateUI();syncProfileEditor();closeProfilePopover();toast('Your profile has been updated.');
    if(document.getElementById('tab-community')?.classList.contains('active'))renderCommunity();
- }catch(err){error.textContent=err.message||'Could not save your profile.';error.hidden=false}
- finally{save.disabled=false}
+ }catch(err){setProfileEditorError(err.message||'Could not save your profile.')}
+ finally{if(save)save.disabled=false}
 });
 document.addEventListener('click',event=>{const wrap=document.querySelector('.profile-menu-wrap');if(wrap&&!wrap.contains(event.target))closeProfilePopover()});
 document.addEventListener('keydown',event=>{if(event.key==='Escape')closeProfilePopover()});
