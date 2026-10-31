@@ -83,11 +83,11 @@
       </div>
       <div class="active-session-actions">
         <button class="btn primary" onclick="showPage('dashboard');goTab('overview')">
-          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg>
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg>
           <span>Go to Main Dashboard</span>
         </button>
         <button class="btn soft" onclick="showPage('dashboard');goTab('questionnaire')">
-          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
           <span>Continue</span>
         </button>
       </div>
@@ -136,7 +136,7 @@
   <section class="section shell" id="how"><div class="heading reveal"><span class="eyebrow">HOW IT WORKS</span><h2>A journey, not a personality label.</h2></div>
     <div class="steps"><article class="reveal"><span></span><h3>Deep questions</h3><p>Scenarios, ranking, scales, multiple choice and reflection prompts.</p></article><article class="reveal delay-1"><span></span><h3>Pattern analysis</h3><p>Looks for repeated signals, contradictions and uncertainty.</p></article><article class="reveal delay-2"><span></span><h3>Several pathways</h3><p>Shows plausible directions with reasoning, skills and trade-offs.</p></article><article class="reveal delay-3"><span></span><h3>Action roadmap</h3><p>Turns a pathway into practical next steps based on grade.</p></article></div>
   </section>
- 
+
 </section>
 
 <section class="page" id="dashboard">
@@ -148,8 +148,8 @@
       <small>Student workspace</small>
     </div>
   </div>
-
-  <div class="side-group">div class="side-group-label">WORKSPACE</div>
+  <div class="side-group">
+    <div class="side-group-label">WORKSPACE</div>
     <button class="side active" data-tab="overview">
       <span class="side-icon-box">
         <span class="material-symbols-outlined side-icon-svg" aria-hidden="true">space_dashboard</span>
@@ -298,6 +298,50 @@
 <div class="tab" id="tab-pathways"><div class="tab-head"><div><span class="eyebrow">PATHWAYS</span><h2>Several directions worth testing.</h2><p>Matches are explained in words, not fake percentages.</p></div></div><p class="muted" id="pathwaysOrderNote" style="margin:0 0 16px"></p><div class="path-grid" id="pathGrid"></div></div>
 
 <div class="tab" id="tab-compare">
+ MB. Photos are optimized before saving.</small></div></div>
+      <label class="profile-nickname-label" for="profileNickname">Nickname</label><input id="profileNickname" name="name" type="text" minlength="2" maxlength="40" autocomplete="nickname" required>
+      <p class="profile-popover-note">This name appears in your workspace and, if enabled, student search.</p>
+      <p class="profile-popover-error" id="profilePopoverError" role="alert" hidden></p>
+      <button class="btn primary profile-save-button" id="profileSaveButton" type="submit">Save profile</button>
+    </form>
+  </section>
+</div>
+<div class="dash-head"><div><span class="eyebrow">STUDENT WORKSPACE</span><h1 id="welcome">Welcome back!</h1><p>Explore your interests, compare options, and choose a practical next step.</p></div><div class="dash-head-actions"><span class="workspace-status"><i></i> Your progress is saved</span><button class="btn primary dashboard-main-action" data-tab="questionnaire"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span> Continue exploring</button></div></div>
+<div class="tab active" id="tab-overview">
+  <section class="overview-next-step" aria-labelledby="nextStepHeading"><div class="next-step-copy"><span class="eyebrow">YOUR NEXT STEP</span><h2 id="nextStepHeading">Start with what interests you.</h2><p id="nextStepDescription">A short questionnaire helps reveal patterns across your interests, learning style, and priorities.</p><button class="btn primary" data-tab="questionnaire"><span class="material-symbols-outlined" aria-hidden="true">edit_note</span><span id="nextStepButtonLabel">Begin questionnaire</span></button></div><div class="next-step-progress"><div class="progress-ring" aria-hidden="true"><span id="progressRingValue">0%</span></div><div><b id="progressDetail">0 of 20 questions answered</b><small>Your answers shape the interest map and pathway suggestions.</small></div></div></section>
+  <div class="stats" aria-label="Your progress"><div><span class="stat-icon material-symbols-outlined" aria-hidden="true">checklist</span><b id="completion">0%</b><small>Questionnaire complete</small></div><div><span class="stat-icon material-symbols-outlined" aria-hidden="true">explore</span><b id="pathwayCount">16</b><small>Pathways to explore</small></div><div><span class="stat-icon material-symbols-outlined" aria-hidden="true">bookmark</span><b id="savedCount">0</b><small>Saved pathways</small></div><div><span class="stat-icon material-symbols-outlined" aria-hidden="true">analytics</span><b id="historyCount">0</b><small>Completed analyses</small></div></div>
+  <div class="dash-grid"><div class="card pathway-overview-card"><div class="card-title"><div><span class="eyebrow">CAREER DIRECTIONS</span><h3>Paths worth exploring</h3><p class="overview-card-subtitle">A few starting points from the YourPath library.</p></div><button class="link" data-tab="pathways">Browse all <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></div><div id="topPaths" role="list" aria-label="Suggested career pathways"></div></div><div class="card interest-overview-card"><div class="interest-head"><div><span class="eyebrow">YOUR PROFILE</span><h3>Interest snapshot</h3></div><span id="interestStatus" class="interest-status">Complete the questionnaire</span></div><div class="radar is-empty" id="interestRadar"><div class="radar-grid"></div><div class="radar-fill" id="radarFill"></div><div class="radar-empty-center" id="radarEmptyCenter"><span class="material-symbols-outlined" aria-hidden="true">insights</span></div><span>Analytical</span><span>Creative</span><span>People</span><span>Learning</span><span>Curiosity</span></div><div class="interest-bars" id="interestBars"></div></div><div class="card reflection-overview-card"><span class="eyebrow">REFLECTION</span><h3>Outside influences</h3><p class="muted">Notice where expectations may be shaping your choices. These prompts are for reflection, not a judgment.</p><div class="pressure"><p><span>Parental expectations</span><b>Medium</b></p><p><span>Peer influence</span><b>Low</b></p><p><span>Status / salary</span><b>Low</b></p></div><button class="link reflection-link" data-tab="questionnaire">Review your answers <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></div></div>
+  <div class="quick">
+    <button onclick="retakeQuestionnaire()">
+      <span class="quick-icon-wrap">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+      </span>
+      <b>Retake questionnaire<small>Archive current & draw 20 new</small></b>
+    </button>
+    <button data-tab="compare">
+      <span class="quick-icon-wrap">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="M7 21h10"></path><path d="M12 3v18"></path><path d="M3 7h18"></path></svg>
+      </span>
+      <b>Compare pathways<small>Side-by-side analysis</small></b>
+    </button>
+    <button data-tab="history">
+      <span class="quick-icon-wrap">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+      </span>
+      <b>Previous analyses<small>Track interest evolution</small></b>
+    </button>
+  </div>
+</div>
+
+<div class="tab" id="tab-questionnaire"><div class="tab-head"><div><span class="eyebrow"> ADAPTIVE EXPLORATION</span><h2>Deep Interest Questionnaire</h2><p>20 questions are selected without replacement using category weights. Every session can be different.</p></div><div class="pill" id="qCount">1 / 20</div></div>
+  <div class="q-progress-bar-wrap"><div class="q-progress-bar" id="qProgressBar" style="width:5%"></div></div>
+  <div class="question-shell"><div id="question"></div></div>
+</div>
+
+<div class="tab" id="tab-analysis"><div class="tab-head"><div><span class="eyebrow">ANALYSIS</span><h2>Patterns, not a verdict.</h2><p id="analysisIntro"></p></div></div><div id="analysis"></div></div>
+<div class="tab" id="tab-pathways"><div class="tab-head"><div><span class="eyebrow">PATHWAYS</span><h2>Several directions worth testing.</h2><p>Matches are explained in words, not fake percentages.</p></div></div><p class="muted" id="pathwaysOrderNote" style="margin:0 0 16px"></p><div class="path-grid" id="pathGrid"></div></div>
+
+<div class="tab" id="tab-compare">
   <div class="tab-head"><div><span class="eyebrow">PATHWAY COMPARISON</span><h2>Compare without declaring a winner.</h2><p>Examine multiple pathways side-by-side across skills, education routes, daily reality, and challenges. No fake percentage scores.</p></div></div>
   <div id="compare"></div>
 </div>
@@ -339,115 +383,6 @@
     </section>
   </div>
 </div>
-
-
-<div class="tab" id="tab-feedback"><div class="tab-head"><div><span class="eyebrow">FEEDBACK</span><h2>Help improve YourPath.</h2><p>What you write here is stored only in this browser. Below the form you can see the anonymous usage counts this device has recorded.</p></div></div><div class="analysis-box full" style="margin-bottom:16px"><span class="tag">EVIDENCE</span><h3 style="margin-top:10px">Is this actually working?</h3><div id="evidenceReadout"></div></div><form class="form-card" id="feedback"><label>Was this useful?<select name="useful"><option>Yes</option><option>Somewhat</option><option>Not really</option></select></label><label>Did you discover something new?<select name="new"><option>Yes</option><option>A little</option><option>No</option></select></label><label>Which pathway interested you most?<input name="favorite"></label><label>What was missing?<textarea name="missing" rows="3"></textarea></label><label>Would you use it again?<select name="again"><option>Yes</option><option>Maybe</option><option>No</option></select></label><label>Open feedback<textarea name="feedback" rows="5"></textarea></label><button class="btn primary">Submit feedback</button></form></div>
-
-<div class="tab" id="tab-settings">
-  <div class="tab-head"><div><span class="eyebrow">ACCOUNT SETTINGS</span><h2>Settings</h2><p>Manage your student details, study preferences, accessibility, sign-in security, and personal data.</p></div></div>
-  <section class="settings-section"><div class="settings-section-head"><span class="settings-section-icon">♙</span><div><h3>Student details</h3><p>Used to tailor your education routes and career roadmap.</p></div></div>
-    <form class="form-card" id="settingsProfile"><div class="form-grid"><label>Full name<input name="name" required maxlength="120"></label><label>Email address<input id="settingsEmailAddress" type="email" readonly aria-readonly="true"></label><label>Phone<input name="phone" autocomplete="tel" maxlength="50"></label><label>Country<select name="country"><option>Philippines (+63)</option><option>United States (+1)</option><option>United Kingdom (+44)</option><option>India (+91)</option><option>Canada (+1)</option><option>Australia (+61)</option><option>Other</option></select></label><label>Grade / Class<select name="grade"><option>Grade 7</option><option>Grade 8</option><option>Grade 9</option><option>Grade 10</option><option>Grade 11</option><option>Grade 12</option><option>College</option></select></label><label>Age<input name="age" type="number" min="10" max="120"></label><label class="wide">School / Location<input name="school" maxlength="160"></label><label>Target study country<select name="targetCountry"><option value="Domestic / Home Country">Domestic / Home Country</option><option value="United States">United States</option><option value="United Kingdom">United Kingdom</option><option value="Canada">Canada</option><option value="Australia / New Zealand">Australia / New Zealand</option><option value="Europe (Germany, Netherlands, etc.)">Europe (Germany, Netherlands, etc.)</option><option value="Asia (Singapore, Japan, etc.)">Asia (Singapore, Japan, etc.)</option></select></label><label>Budget & financial aid<select name="budget"><option value="Full scholarship needed">Full scholarship / Financial aid needed</option><option value="Partial scholarship preferred">Partial scholarship preferred</option><option value="Public state university budget">Public state university tuition budget</option><option value="Flexible / Self-funded">Flexible / Self-funded</option></select></label><label class="wide">Personal goal or dream project<textarea name="goals" rows="3" maxlength="1200" placeholder="What would you like to learn, build, or contribute to?"></textarea></label></div><button class="btn primary" type="submit">Save student details</button></form>
-  </section>
-  <section class="settings-section"><div class="settings-section-head"><span class="settings-section-icon">✦</span><div><h3>App preferences</h3><p>Choose a display style, community visibility, and motion settings.</p></div></div><form class="form-card settings-preferences" id="settingsPreferences"><label>Appearance<select id="settingTheme" name="theme"><option value="light">Light</option><option value="dark">Dark</option><option value="system">Use my device setting</option></select></label><label class="settings-check"><input id="settingReducedMotion" type="checkbox" name="reducedMotion"><span><b>Reduce motion</b><small>Limit transitions and animation throughout the app.</small></span></label><label class="settings-check"><input id="settingCommunityVisible" type="checkbox" name="communityVisible"><span><b>Show my profile in student search</b><small>Other students can find your display name, grade, and country. Your email, phone, and school stay private. You can turn this off any time.</small></span></label><button class="btn primary" type="submit">Save app preferences</button></form></section>
-  <section class="settings-section"><div class="settings-section-head"><span class="settings-section-icon">♧</span><div><h3>Sign-in security</h3><p>Change your password. Your current password is required.</p></div></div><form class="form-card form-grid" id="passwordChangeForm"><label class="wide">Current password<input name="currentPassword" type="password" autocomplete="current-password" required></label><label>New password<input name="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="256" required></label><label>Confirm new password<input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="256" required></label><p class="settings-hint wide">Use at least 8 characters. Passwords are never saved in your browser.</p><button class="btn primary" type="submit">Update password</button></form></section>
-  <section class="settings-section"><div class="settings-section-head"><span class="settings-section-icon">⬡</span><div><h3>Privacy & data</h3><p>Export a copy of your YourPath data or clear your saved exploration progress.</p></div></div><div class="form-card settings-actions"><button class="btn soft" id="exportDataBtn" type="button">Download my data</button><button class="btn soft" id="cookieSettingsBtn" type="button">Cookie preferences</button><button class="btn soft" id="clearProgressBtn" type="button">Clear saved progress</button><div class="settings-danger"><div><b>Delete account</b><small>Permanently delete your account and synced progress.</small></div><button class="btn danger" id="deleteAccountBtn" type="button">Delete account</button></div></div></section>
-</div>
-
-</section></div></section>
-<section class="page" id="blog">
-  <div class="shell public">
-    <span class="eyebrow">BLOG & SAFETY</span>
-    <h1>Blog, Safety & Support</h1>
-    <p>Everything you need to know about the YourPath. platform, its community, and how your information is handled.</p>
-
-    <div class="blog-feature">
-      <div class="blog-feature-body">
-        <span class="eyebrow">GENERAL INFORMATION</span>
-        <h2>What YourPath. actually is.</h2>
-        <p>YourPath. is an AI-powered career exploration platform designed for students. Instead of matching you to a job title with a static quiz, it asks adaptive questions about your genuine interests, working style, motivation and the pressure around you — then explains the reasoning behind every pathway it suggests.</p>
-        <p>It is decision support, not a verdict. There is no “97% career match” here. Every pathway comes with its skills, education routes, trade-offs, alternatives, and one small real-world experiment you can run this month.</p>
-        <div class="blog-feature-facts">
-        </div>
-      </div>
-      <aside class="blog-feature-side">
-        <h3>Quick links</h3>
-        <button type="button" class="blog-link" data-page="explore">Explore careers</button>
-        <button type="button" class="blog-link" data-page="roadmap">Build a roadmap</button>
-        <button type="button" class="blog-link" data-page="resources">Research resources</button>
-        <button type="button" class="blog-link" onclick="openModal('privacyModal')">Privacy Policy</button>
-        <button type="button" class="blog-link" onclick="openModal('termsModal')">Terms & Conditions</button>
-      </aside>
-    </div>
-
-    <div class="blog-grid">
-      <article class="card blog-card">
-        <span class="blog-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 16.5v-5"></path><path d="M12 8h.01"></path></svg></span>
-        <h3>General Information</h3>
-        <p>YourPath. is an AI-powered career exploration platform for students. Adaptive questioning surfaces the interests, working styles and motivations that actually appear in your answers — then turns them into pathways you can test in the real world.</p>
-        <p>Every session asks 20 questions across ten dimensions, from genuine interests to external pressure. Selection weights describe how questions are chosen; they are never a personality score.</p>
-      </article>
-
-      <article class="card blog-card safe-card">
-        <span class="blog-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9V6l7-3z"></path><path d="M9.2 12.2l2 2 3.6-4"></path></svg></span>
-        <h3>Is YourPath. safe to use?</h3>
-        <p><b>Your privacy matters.</b> Your account details and saved exploration progress are sent to the YourPath server so you can sign in and continue your journey. Some working data and preferences are also kept in this browser.</p>
-        <ul class="blog-list">
-          <li>No third-party trackers, advertising pixels, or resale of student data.</li>
-          <li>No AI provider keys or student records are exposed in the frontend.</li>
-          <li>Export your data or clear saved progress in <b>Settings → Privacy & data</b>. You can also request account deletion there.</li>
-          <li>Pathways are explained as hypotheses to test, never as diagnoses or guarantees.</li>
-        </ul>
-        <p class="blog-note">YourPath uses server-managed sessions and account-scoped access for saved progress. Deployments should use HTTPS and encrypted database storage, with documented retention and deletion rules.</p>
-      </article>
-
-      <article class="card blog-card">
-        <span class="blog-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"></rect><path d="M3.8 7.2l7.4 5.3a1.4 1.4 0 0 0 1.6 0l7.4-5.3"></path></svg></span>
-        <h3>Contact Info</h3>
-        <p>Questions, bug reports, school partnerships, or feedback — reach us any time.</p>
-        <ul class="blog-contact">
-          <li><b>Support email</b><a href="mailto:support@yourpath.demo">support@yourpath.demo</a></li>
-          <li><b>Feedback & partnerships</b><a href="mailto:hello@yourpath.demo">hello@yourpath.demo</a></li>
-          <li><b>Support hours</b><span>Monday – Friday, 9:00 – 17:00 GMT</span></li>
-          <li><b>In the app</b><span>Dashboard, then Feedback</span></li>
-        </ul>
-        <p class="blog-note">For an urgent safety concern about a student, contact your school or a local support service first — YourPath. is not an emergency service.</p>
-      </article>
-
-      <article class="card blog-card community-card">
-        <span class="blog-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"></path></svg></span>
-        <h3>Join our Discord</h3>
-        <p>Come hang out with other students while they figure things out. Post your 30-day experiments, ask the awkward questions about subjects and degrees, and borrow ideas from people a step ahead of you.</p>
-        <ul class="blog-list">
-          <li>Share your 30-day experiments and what you learned.</li>
-          <li>Ask about subjects, degrees and application routes.</li>
-          <li>Weekly prompts to keep your roadmap moving.</li>
-        </ul>
-        <a href="https://discord.gg/yourpath" target="_blank" rel="noopener" class="btn primary btn-xl discord-btn">Join the Discord community</a>
-      </article>
-    </div>
-
-    <section class="blog-faq">
-      <div class="heading"><span class="eyebrow">FAQ</span><h2>Common questions.</h2><p>Short answers about how YourPath. works, what it stores, and what it will never claim to know.</p></div>
-      <div class="faq-grid">
-        <details class="faq" open><summary>Does YourPath. tell me which career to choose?</summary><p>No. It shows several plausible directions with their reasoning, trade-offs and alternatives, plus one small experiment for each. The decision stays yours — and “I don’t know yet” is a normal, honest answer.</p></details>
-        <details class="faq"><summary>Where is my data stored?</summary><p>Your account profile and saved exploration progress are stored by the YourPath server. This browser also keeps a working copy, preferences, and cookie choice. Use Settings to export your data, clear synced progress, or delete your account.</p></details>
-        <details class="faq"><summary>Can one questionnaire decide my future?</summary><p>No, and any platform that claims otherwise is overselling. A 20-question session is one sample of evidence. Retaking it later and running real experiments gives better information.</p></details>
-        <details class="faq"><summary>How do I delete my account or my answers?</summary><p>Log out, then clear this site’s data in your browser settings, or use <b>Cookie settings</b> in the footer. A production deployment would also provide an in-app deletion request flow.</p></details>
-        <details class="faq"><summary>Is this a replacement for a school counselor?</summary><p>No. YourPath. is decision support. Teachers, counselors, parents and professionals should stay part of the conversation.</p></details>
-        <details class="faq"><summary>How do I report a problem?</summary><p>Email <a href="mailto:support@yourpath.demo">support@yourpath.demo</a> or post in the Discord community. Include the page you were on and what you expected to happen.</p></details>
-      </div>
-    </section>
-  </div>
-</section>
-<section class="page" id="explore"><div class="shell public"><span class="eyebrow">EXPLORE CAREERS</span><h1>Curiosity has more than one destination.</h1><p>Start with clusters, then research specific roles, degrees and universities.</p><div class="path-grid" id="publicPaths"></div></div></section>
-<section class="page" id="roadmap"><div class="shell public"><span class="eyebrow">ROADMAPS</span><h1>Make the next step visible.</h1><p>A real roadmap changes with your grade, country, budget and goals.</p><div class="roadmap-flow"><div><b>School</b><small>Subjects / stream</small></div><i></i><div><b>Skills</b><small>Projects / practice</small></div><i></i><div><b>Education</b><small>Degrees / routes</small></div><i></i><div><b>Career</b><small>Experience / options</small></div></div><button class="btn primary" id="roadmapStart">Build my roadmap</button></div></section>
-<section class="page" id="resources"><div class="shell public"><span class="eyebrow">RESOURCES</span><h1>Research beyond the chatbot.</h1><p>Production versions should show current, attributable information with dates and sources.</p><div class="resources"><a href="https://www.bls.gov/ooh/" target="_blank" rel="noopener">U.S. Bureau of Labor Statistics <small>Occupational outlook, pay and employment projections.</small></a><a href="https://www.weforum.org/publications/the-future-of-jobs-report-2025/" target="_blank" rel="noopener">World Economic Forum <small>Global employer perspectives on jobs and skills.</small></a><a href="https://www.oecd.org/education/" target="_blank" rel="noopener">OECD Education <small>Education research and comparative data.</small></a><a href="https://www.unesco.org/en/education" target="_blank" rel="noopener">UNESCO Education <small>International education resources.</small></a><a href="https://www.onetonline.org/" target="_blank" rel="noopener">O*NET Online <small>Detailed task, skill and interest profiles for hundreds of occupations.</small></a><a href="https://www.coursera.org/" target="_blank" rel="noopener">Coursera <small>Free and low-cost courses from universities to test a subject before committing.</small></a><a href="https://www.khanacademy.org/" target="_blank" rel="noopener">Khan Academy <small>Free lessons and practice for school subjects, test prep and career basics.</small></a><a href="https://www.myworldofwork.co.uk/" target="_blank" rel="noopener">My World of Work <small>Skills assessment and career tools built for students.</small></a><a href="https://www.internconnection.net/" target="_blank" rel="noopener">Internships &amp; Work Experience <small>Find internships, placements and volunteer roles that build real evidence.</small></a><a href="https://educationusa.state.gov/" target="_blank" rel="noopener">EducationUSA <small>Official U.S. State Department advising for studying in the United States.</small></a><a href="https://www.topuniversities.com/" target="_blank" rel="noopener">QS Top Universities <small>University rankings, program search and application guidance.</small></a><a href="https://www.mindtools.com/" target="_blank" rel="noopener">Mind Tools <small>Practical skill-building resources for communication, leadership and study.</small></a></div></div></section>
-<section class="page" id="about"><div class="shell public about"><div><button class="btn soft public-back" type="button" onclick="showPage('home')"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>Back</button><span class="eyebrow">ABOUT YOURPATH.</span><h1>For students, by purpose.</h1><p>YourPath. is a guided career-exploration platform that helps students discover what genuinely fits them — and gives them a clear, honest path to get there.</p>
-
-      <div class="about-block"><h3>What the website is for</h3><p>YourPath. exists to replace guesswork with guided self-discovery. Instead of telling students what they "should" become, it helps them understand who they are and where they could go next. It is decision support — a structured space to think clearly about the future — not a replacement for teachers, counselors, parents or professional advice.</p></div>
-
-      <div class="about-block"><h3>Our purpose</h3><p>Career decisions are often made early, with too little information and too much pressure. YourPath. gives students an honest, low-risk way to explore many plausible directions before committing to one, so the choice is driven by genuine fit rather than by fear or the expectations of others.</p></div>
-
       <div class="about-block"><h3>What it does</h3><ul class="about-list"><li><b>Guided self-discovery</b> — a 20-question questionnaire covers ten dimensions of interest, aptitude and preference, so the picture is built from many signals rather than a single answer.</li><li><b>Personalized pathways &amp; roadmaps</b> — the answers are turned into a shortlist of plausible pathways, each with contextual education, subject and skill guidance.</li><li><b>Visual insight</b> — a radar map summarizes the patterns behind your answers, so you can see how your interests spread across the dimensions.</li><li><b>Saved pathways &amp; notes</b> — explore, shortlist and annotate the directions that interest you, and return to them whenever you need.</li><li><b>Experiments &amp; real-world signals</b> — small guided experiments let you test an interest in the real world and refine your picture over time.</li></ul></div>
 
       <div class="about-block"><h3>How to read your results</h3><p>Results describe patterns in your responses — not your worth, your ability or a fixed personality. They are a starting point for a conversation with yourself, your teachers and your family, and should always be verified against current, official sources before you rely on them.</p></div>
@@ -583,4 +518,3 @@
 <script src="app.js"></script>
 </body>
 </html>
-
