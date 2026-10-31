@@ -1,3 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#6c5ce7">
+<meta name="description" content="YourPath. | an explainable career exploration platform built for students. Discover what fits you.">
+<title>YourPath. | Discover What Fits You</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.3.2/css/flag-icons.min.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="session-restoring">
+<div class="page-noise"></div>
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="session-restore-screen" role="status" aria-live="polite"><span class="material-symbols-outlined" aria-hidden="true">route</span><b>Restoring your workspace</b><small>Checking your saved session…</small></div>
+<header class="topbar">
+  <a class="brand home-brand" href="#home"><span><strong class="brand-title">YourPath<span class="brand-accent">.</span></strong><small>Discover&nbsp; • &nbsp;Explore&nbsp; • &nbsp;Build Your Future</small></span></a>
+ <div class="top-actions">
+  <button class="btn ghost btn-large" id="loginBtn">Log in</button>
+  <button class="btn primary btn-large" id="signupBtn">Sign up free</button>
+
+  <div id="userMenu" class="user-menu" style="display:none;">
+    <span id="userGreeting"></span>
+    <button class="btn ghost" id="topLogout">Log out</button>
+  </div>
+
+  <button class="hamb" id="hamb" aria-label="Open menu">
+    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+  </button>
+</div>
+</header>
+<div class="mobile-nav home-menu" id="mobileNav"><a href="#about" data-page="about">About</a><a href="#blog" data-page="blog">Blogs &amp; Safety</a><a href="#explore" data-page="explore">Explore Careers</a><a href="#roadmap" data-page="roadmap">Roadmaps</a><a href="#resources" data-page="resources">Resources</a></div>
+
+<main>
+<section class="page active" id="home">
+  <div class="welcome-screen">
+    <section class="welcome-story" aria-label="Welcome to YourPath">
+      <div class="welcome-story-copy">
+        <span class="eyebrow">FOR STUDENTS · BY PURPOSE · NOT PRESSURE</span>
+        <h1>We don’t predict your future. <span>We help you explore it.</span></h1>
+        <p>YourPath turns what you genuinely enjoy into career directions you can actually test — with real trade-offs, not just a single verdict.</p>
+        <ul class="welcome-benefits">
+          <li><span class="welcome-icon material-symbols-outlined" aria-hidden="true">explore</span><span><b>Explore career paths</b><small>Find what fits your interests and goals.</small></span></li>
+          <li><span class="welcome-icon material-symbols-outlined" aria-hidden="true">school</span><span><b>Discover universities</b><small>See where you can build your future.</small></span></li>
+          <li><span class="welcome-icon material-symbols-outlined" aria-hidden="true">science</span><span><b>Try real-world experiments</b><small>Gain hands-on experience, virtually.</small></span></li>
+          <li><span class="welcome-icon material-symbols-outlined" aria-hidden="true">track_changes</span><span><b>Make confident decisions</b><small>With data, insights, and your interests.</small></span></li>
+        </ul>
+      </div>
+    </section>
+    <section class="welcome-auth" aria-label="Sign in">
+      <div class="welcome-auth-inner">
+        <h2>Welcome back!</h2>
+        <p>Log in to continue your journey or create a new account if you’re just getting started.</p>
+        <div class="welcome-auth-tabs" role="tablist" aria-label="Account access"><button type="button" id="homeLoginTab" class="selected" role="tab" aria-selected="true" aria-controls="homeLoginForm" onclick="openLogin()">Log In</button><button type="button" id="homeSignupTab" role="tab" aria-selected="false" aria-controls="signupForm" onclick="openSignup()">Sign Up</button></div>
+        <form id="homeLoginForm" class="welcome-login-form" autocomplete="on">
+          <label>Email address<div class="welcome-input"><span class="material-symbols-outlined" aria-hidden="true">mail</span><input id="homeEmail" name="email" type="email" autocomplete="email" placeholder="Enter your email" required></div></label>
+          <label>Password<div class="welcome-input"><span class="material-symbols-outlined" aria-hidden="true">lock</span><input name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required><button type="button" class="password-toggle material-symbols-outlined" aria-label="Show password" onclick="const p=this.parentElement.querySelector('input');p.type=p.type==='password'?'text':'password';this.textContent=p.type==='password'?'visibility':'visibility_off';this.setAttribute('aria-label',p.type==='password'?'Show password':'Hide password')">visibility</button></div></label>
+          <button class="btn primary btn-full welcome-submit" type="submit"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span> Log In</button>
+        </form>
+        <form id="signupForm" class="welcome-login-form hidden" autocomplete="on">
+          <label>Full name<input name="name" type="text" autocomplete="name" placeholder="Your name" required></label>
+          <label>Email address<input name="email" type="email" autocomplete="email" placeholder="you@example.com" required></label>
+          <label>Password<input name="password" type="password" autocomplete="new-password" minlength="8" maxlength="256" placeholder="At least 8 characters" required></label>
+          <label>Confirm password<input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="256" placeholder="Enter your password again" required></label>
+          <label class="welcome-consent"><input type="checkbox" required><span>I agree to the <button type="button" class="link-inline" onclick="openModal('privacyModal')">Privacy Policy</button> and <button type="button" class="link-inline" onclick="openModal('termsModal')">Terms &amp; Conditions</button>, and confirm I am 13 or older or have parent/guardian permission.</span></label>
+          <button class="btn primary btn-full welcome-submit" type="submit">Create student account</button>
+        </form></div>
+    </section>
+  </div>
+
+  <div class="active-session-banner shell hidden" id="activeSessionBanner">
+    <div class="active-session-content">
+      <div>
+        <span class="eyebrow">ACTIVE STUDENT WORKSPACE</span>
+        <h3 id="activeSessionGreeting">Welcome back!</h3>
+        <p>You are currently logged in. Your 20-question session, AI analysis, pathways, and roadmaps are ready.</p>
+      </div>
+      <div class="active-session-actions">
+        <button class="btn primary" onclick="showPage('dashboard');goTab('overview')">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg>
+          <span>Go to Main Dashboard</span>
+        </button>
+        <button class="btn soft" onclick="showPage('dashboard');goTab('questionnaire')">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+          <span>Continue</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="starting-menu shell reveal delay-2" id="startingMenu">
+    <div class="starting-menu-head">
+      <span class="eyebrow">GET STARTED · STUDENT PORTAL</span>
+      <h2>Choose how you want to start</h2>
+      <p>Sign in to continue your saved journey, register a new student account, or explore the career library as a guest.</p>
+    </div>
+    <div class="starting-menu-grid">
+      <div class="starting-card">
+        <div class="starting-badge">EXISTING STUDENTS</div>
+        <div class="starting-icon starting-icon-svg-wrap">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        </div>
+        <h3>Log In to Your Space</h3>
+        <p>Continue your 20-question session, review AI patterns, and access your saved pathways, roadmaps, and previous analyses.</p>
+        <button class="btn ghost btn-full" onclick="openLogin()" style="border:1.5px solid #dcd8ee">Log in to account</button>
+      </div>
+
+      <div class="starting-card highlight-card">
+        <div class="starting-badge highlight-badge">NEW STUDENTS</div>
         <div class="starting-icon starting-icon-svg-wrap">
           <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg>
         </div>
@@ -34,8 +149,7 @@
     </div>
   </div>
 
-  <div class="side-group">
-    <div class="side-group-label">WORKSPACE</div>
+  <div class="side-group">div class="side-group-label">WORKSPACE</div>
     <button class="side active" data-tab="overview">
       <span class="side-icon-box">
         <span class="material-symbols-outlined side-icon-svg" aria-hidden="true">space_dashboard</span>
@@ -136,8 +250,7 @@
   </div>
 </aside>
 <section class="dash-main">
-<div class="profile-menu-wrap">
-  <button class="profile-menu-button" id="profileMenuButton" type="button" aria-label="Open profile settings" aria-expanded="false" aria-controls="profilePopover"><span class="profile-menu-avatar" id="profileMenuAvatar">Y</span><span class="material-symbols-outlined" aria-hidden="true">expand_more</span></button>
+<div class="profile-menu-wrap"><button class="profile-menu-button" id="profileMenuButton" type="button" aria-label="Open profile settings" aria-expanded="false" aria-controls="profilePopover"><span class="profile-menu-avatar" id="profileMenuAvatar">Y</span><span class="material-symbols-outlined" aria-hidden="true">expand_more</span></button>
   <section class="profile-popover" id="profilePopover" aria-labelledby="profilePopoverTitle" hidden>
     <div class="profile-popover-heading"><div><span class="eyebrow">YOUR ACCOUNT</span><h2 id="profilePopoverTitle">Edit your profile</h2></div><button class="profile-popover-close" id="profilePopoverClose" type="button" aria-label="Close profile editor">×</button></div>
     <form id="profilePopoverForm">
@@ -164,7 +277,7 @@
     <button data-tab="compare">
       <span class="quick-icon-wrap">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="M7 21h10"></path><path d="M12 3v18"></path><path d="M3 7h18"></path></svg>
-      </span>
+</span>
       <b>Compare pathways<small>Side-by-side analysis</small></b>
     </button>
     <button data-tab="history">
@@ -226,6 +339,7 @@
     </section>
   </div>
 </div>
+
 
 <div class="tab" id="tab-feedback"><div class="tab-head"><div><span class="eyebrow">FEEDBACK</span><h2>Help improve YourPath.</h2><p>What you write here is stored only in this browser. Below the form you can see the anonymous usage counts this device has recorded.</p></div></div><div class="analysis-box full" style="margin-bottom:16px"><span class="tag">EVIDENCE</span><h3 style="margin-top:10px">Is this actually working?</h3><div id="evidenceReadout"></div></div><form class="form-card" id="feedback"><label>Was this useful?<select name="useful"><option>Yes</option><option>Somewhat</option><option>Not really</option></select></label><label>Did you discover something new?<select name="new"><option>Yes</option><option>A little</option><option>No</option></select></label><label>Which pathway interested you most?<input name="favorite"></label><label>What was missing?<textarea name="missing" rows="3"></textarea></label><label>Would you use it again?<select name="again"><option>Yes</option><option>Maybe</option><option>No</option></select></label><label>Open feedback<textarea name="feedback" rows="5"></textarea></label><button class="btn primary">Submit feedback</button></form></div>
 
@@ -345,6 +459,7 @@
           <a class="social-link social-tiktok" href="https://www.tiktok.com/@yourpath" target="_blank" rel="noopener" aria-label="YourPath on TikTok"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12.525 0.020 c1.310 -0.020 2.610 -0.010 3.910 -0.020 c0.080 1.530 0.630 3.090 1.750 4.170 c1.120 1.110 2.700 1.620 4.240 1.790 v4.030 c-1.440 -0.050 -2.890 -0.350 -4.200 -0.970 c-0.570 -0.260 -1.100 -0.590 -1.620 -0.930 c-0.010 2.920 0.010 5.840 -0.020 8.750 c-0.080 1.400 -0.540 2.790 -1.350 3.940 c-1.310 1.920 -3.580 3.170 -5.910 3.210 c-1.430 0.080 -2.860 -0.310 -4.080 -1.030 c-2.020 -1.190 -3.440 -3.370 -3.650 -5.710 c-0.020 -0.500 -0.030 -1.000 -0.010 -1.490 c0.180 -1.900 1.120 -3.720 2.580 -4.960 c1.660 -1.440 3.980 -2.130 6.150 -1.720 c0.020 1.480 -0.040 2.960 -0.040 4.440 c-0.990 -0.320 -2.150 -0.230 -3.020 0.370 c-0.630 0.410 -1.110 1.040 -1.360 1.750 c-0.210 0.510 -0.150 1.070 -0.140 1.610 c0.240 1.640 1.820 3.020 3.500 2.870 c1.120 -0.010 2.190 -0.660 2.770 -1.610 c0.190 -0.330 0.400 -0.670 0.410 -1.060 c0.100 -1.790 0.060 -3.570 0.070 -5.360 c0.010 -4.030 -0.010 -8.050 0.020 -12.070 Z"></path></svg><span>TikTok</span></a>
         </div>
       </div>
+
 
       </div></div><div class="privacy-card"><h3>Privacy by design</h3><p>Your account and saved exploration progress sync with the YourPath server. This browser keeps a working copy and preferences. Use Settings to export, clear, or delete your account data.</p><button class="btn soft" id="privacyBtn">Privacy notice</button></div></div></section>
 </main>
@@ -468,3 +583,4 @@
 <script src="app_scratch.js"></script>
 </body>
 </html>
+
