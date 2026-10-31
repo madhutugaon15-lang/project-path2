@@ -1,146 +1,112 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#f8f6f1">
-  <meta name="description" content="YourPath helps you explore careers, discover your interests and find your own direction.">
-  <title>YourPath — Discover Your Direction</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-</head>
-
-<body>
-  <header class="site-header">
-    <a class="brand" href="#" aria-label="YourPath home">
-      <span class="brand-mark">Y</span>
-      <span>YourPath<span class="brand-period">.</span></span>
-    </a>
-
-    <nav class="main-nav" aria-label="Main navigation">
-      <a href="#about">Our approach</a>
-      <a href="#explore">Explore careers</a>
-      <a href="#how-it-works">How it works</a>
-    </nav>
-
-    <button class="header-button" id="start-button">
-      Begin exploring <span aria-hidden="true">↗</span>
-    </button>
-
-    <button class="menu-toggle" id="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">
-      ☰
-    </button>
-  </header>
-
-  <main>
-    <section class="hero" id="home">
-      <div class="hero-content">
-        <p class="eyebrow">A SPACE TO DISCOVER YOURSELF</p>
-
-        <h1>You are more than<br>the things you're <em>good at.</em></h1>
-
-        <p class="hero-description">
-          Your future deserves curiosity, not pressure.
-          Discover possibilities, understand what matters to you,
-          and explore a direction that feels like your own.
-        </p>
-
-        <div class="hero-actions">
-          <button class="primary-button" id="hero-start">
-            Discover your path <span aria-hidden="true">→</span>
-          </button>
-          <a class="text-link" href="#how-it-works">How it works ↓</a>
-        </div>
-
-        <div class="hero-note">
-          <span class="note-dot"></span>
-          No fixed paths. No pressure. Just possibilities.
-        </div>
+        <p id="loaderSub">Setting up your personalized career exploration environment</p>
       </div>
+      <div class="loader-progress-info"><span id="loaderStepText">Starting up...</span><b id="loaderPercent">0%</b></div>
+      <div class="loader-bar-wrap"><div class="loader-bar" id="loaderBar"></div></div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop hidden" id="privacyModal">
+  <div class="modal wide legal-modal" role="dialog" aria-modal="true" aria-label="Privacy Policy">
+    <span class="eyebrow">PRIVACY POLICY</span>
+    <h2>How YourPath. handles your information.</h2>
+    <p>Your account details and saved exploration progress are sent to the YourPath server so your student workspace can sync. Your browser also keeps a working copy and preferences. This notice explains what is stored and which controls are available.</p>
 
-      <div class="hero-visual" aria-label="Your future is open to possibilities">
-        <div class="visual-card visual-card-main">
-          <div class="visual-orbit orbit-one"></div>
-          <div class="visual-orbit orbit-two"></div>
-          <div class="visual-center">Y</div>
-          <span class="visual-label label-one">Curiosity</span>
-          <span class="visual-label label-two">Possibility</span>
-          <span class="visual-label label-three">Your direction</span>
-        </div>
-        <div class="visual-caption">
-          <span>01 / YOUR JOURNEY</span>
-          <span>Start anywhere.</span>
-        </div>
-      </div>
-    </section>
+    <h3>1. What we collect</h3>
+    <ul class="security">
+      <li><b>Account details</b> you type in: name, email, optional phone, country, grade, age and optional school.</li>
+      <li><b>Questionnaire answers</b>, saved pathways, comparison choices and feedback you submit.</li>
+      <li><b>Preferences</b> such as your cookie choice and login state.</li>
+      <li>We do <b>not</b> collect location data, contacts, camera or microphone access, or advertising identifiers.</li>
+    </ul>
 
-    <section class="intro-section" id="about">
-      <p class="eyebrow">BEYOND THE EXPECTED</p>
-      <h2>Your marks don't tell<br>your <em>whole story.</em></h2>
-      <p>
-        There is more to a person than grades, job titles or other
-        people's expectations. YourPath is a place to explore the
-        interests, values and strengths that make your journey yours.
-      </p>
-    </section>
+    <h3>2. Where it is stored</h3>
+    <p>Account details and saved learning progress are stored on the YourPath server and synced with your browser. Your browser keeps a working copy, preferences and cookie choice. Feedback and anonymous usage evidence are stored locally. Use Settings to export your data, clear synced exploration progress, or permanently delete your account.</p>
 
-    <section class="explore-section" id="explore">
-      <div>
-        <p class="eyebrow">A WORLD OF POSSIBILITIES</p>
-        <h2>There isn't just<br><em>one way forward.</em></h2>
-      </div>
-      <p>
-        From science and technology to art, business, healthcare,
-        sport and beyond — explore different directions without
-        limiting yourself too early.
-      </p>
-    </section>
+    <h3>3. What we never do</h3>
+    <ul class="security">
+      <li>No selling, renting or sharing of student data.</li>
+      <li>No third-party advertising or cross-site tracking pixels.</li>
+      <li>No AI provider keys, secrets or server credentials in the frontend.</li>
+      <li>No presenting a questionnaire result as a diagnosis or a guaranteed outcome.</li>
+    </ul>
 
-    <section class="steps-section" id="how-it-works">
-      <p class="eyebrow">A LITTLE CLARITY, ONE STEP AT A TIME</p>
-      <h2>Your journey starts<br>with a <em>question.</em></h2>
+    <h3>4. Your rights and controls</h3>
+    <ul class="security">
+      <li><b>Access</b> — review your student details and saved exploration progress in the Dashboard and Settings.</li>
+      <li><b>Correction</b> — edit your student details from Settings and save.</li>
+      <li><b>Deletion</b> — clear exploration progress or permanently delete your account from Settings.</li>
+      <li><b>Withdrawal of consent</b> — log out; no further data is collected until you sign in again.</li>
+    </ul>
 
-      <div class="steps-grid">
-        <article class="step-card">
-          <span class="step-number">01</span>
-          <h3>Understand yourself</h3>
-          <p>Reflect on what interests you, what motivates you and how you like to learn.</p>
-        </article>
+    <h3>5. Students and age</h3>
+    <p>YourPath. is intended for students aged 13 and over. Where a country requires guardian consent, that requirement must be implemented before launch. Do not enter sensitive personal, medical or family information into this demo.</p>
 
-        <article class="step-card">
-          <span class="step-number">02</span>
-          <h3>Explore possibilities</h3>
-          <p>Discover careers and pathways you may never have considered.</p>
-        </article>
+    <h3>6. Before a real launch</h3>
+    <ul class="security">
+      <li>Keep server sessions behind HTTPS and protect database backups and stored records with encryption.</li>
+      <li>Encrypt data in transit (HTTPS/TLS) and at rest; minimize what is collected in the first place.</li>
+      <li>Use role-based access control and audit logs for any staff access.</li>
+      <li>Implement age and guardian consent rules for every country served.</li>
+      <li>Document retention, correction and deletion procedures, and honour deletion requests.</li>
+      <li>Keep AI provider keys server-side and document the model provider's data-retention policy.</li>
+      <li>Use aggregated analytics rather than exposing identifiable student records.</li>
+      <li>Have student-facing guidance reviewed by qualified humans before publication.</li>
+    </ul>
 
-        <article class="step-card">
-          <span class="step-number">03</span>
-          <h3>Find your next step</h3>
-          <p>Turn your discoveries into practical ideas and experiments.</p>
-        </article>
-      </div>
-    </section>
+    <h3>7. Contact</h3>
+    <p>Privacy questions or requests: <a href="mailto:support@yourpath.demo">support@yourpath.demo</a>. See the <button type="button" class="link-inline" onclick="closeModal('privacyModal');openModal('termsModal')">Terms & Conditions</button> for how the service may be used.</p>
+    <small class="legal-note">Last updated: 2026. This is a prototype notice and is not legal advice.</small>
+  </div>
+</div>
 
-    <section class="closing-section">
-      <p class="eyebrow">YOUR FUTURE ISN'T A FORMULA</p>
-      <h2>Make room for<br><em>who you could become.</em></h2>
-      <button class="primary-button" id="closing-start">
-        Begin your journey <span aria-hidden="true">→</span>
-      </button>
-    </section>
-  </main>
+<div class="modal-backdrop hidden" id="termsModal">
+  <div class="modal wide legal-modal" role="dialog" aria-modal="true" aria-label="Terms and Conditions">
+    <span class="eyebrow">TERMS & CONDITIONS</span>
+    <h2>Terms of use.</h2>
+    <p>By creating an account you agree to these terms. They exist to keep YourPath. honest about what it can and cannot do for you.</p>
 
-  <footer class="site-footer">
-    <a class="brand" href="#home">
-      <span class="brand-mark">Y</span>
-      <span>YourPath<span class="brand-period">.</span></span>
-    </a>
-    <p>Made for the paths that haven't been imagined yet.</p>
-    <span>© 2026 YourPath</span>
-  </footer>
+    <h3>1. What YourPath. is</h3>
+    <ul class="security">
+      <li>A career exploration and decision-support tool built for students.</li>
+      <li>Not a guarantee of admission, employment, income or any other outcome.</li>
+      <li>Not medical, psychological, legal or financial advice, and not an emergency service.</li>
+      <li>Not a replacement for teachers, counselors, parents or qualified professionals.</li>
+    </ul>
 
-  <script src="src/app.js"></script>
+    <h3>2. Your account</h3>
+    <ul class="security">
+      <li>Provide accurate details and keep your login credentials private.</li>
+      <li>Do not enter another person's private information.</li>
+      <li>Do not attempt to disrupt, scrape, reverse-engineer or misuse the platform.</li>
+      <li>You are responsible for activity carried out through your account.</li>
+    </ul>
+
+    <h3>3. Results and how to read them</h3>
+    <ul class="security">
+      <li>Question selection weights describe how questions are chosen. They are never a personality score or a career match percentage.</li>
+      <li>Pathways are hypotheses to test through real experience, not verdicts about you.</li>
+      <li>Career, salary, university and job-market details change and must be verified against current official sources before you rely on them.</li>
+      <li>Results depend on honest answers. There is no socially correct answer.</li>
+    </ul>
+
+    <h3>4. Intellectual property</h3>
+    <p>The platform design, question bank, pathway library and written content belong to the YourPath. project. You may use your own results and roadmap for personal, educational and career-planning purposes.</p>
+
+    <h3>5. Availability and changes</h3>
+    <ul class="security">
+      <li>This is a prototype: features may change, break or be withdrawn without notice.</li>
+      <li>These terms may be updated as the platform evolves; continued use means you accept the current version.</li>
+      <li>Where a term is unenforceable, the remaining terms continue to apply.</li>
+    </ul>
+
+    <h3>6. Contact</h3>
+    <p>Questions about these terms: <a href="mailto:support@yourpath.demo">support@yourpath.demo</a>. See the <button type="button" class="link-inline" onclick="closeModal('termsModal');openModal('privacyModal')">Privacy Policy</button> for how your information is handled.</p>
+    <small class="legal-note">Last updated: 2026. This is a prototype agreement and is not legal advice.</small>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="site-data.js"></script>
+<script src="app_scratch.js"></script>
 </body>
 </html>
